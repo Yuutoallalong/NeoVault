@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:my_app/components/back_leading_button.dart';
 import 'package:my_app/components/footer_authen.dart';
 import 'package:my_app/components/input.dart';
+import 'package:my_app/components/show_snackbar.dart';
+import 'package:my_app/provider/user_provider.dart';
 
 class Login extends ConsumerStatefulWidget {
   const Login({super.key});
@@ -74,7 +76,28 @@ class LoginState extends ConsumerState<Login> {
                           const SizedBox(
                             height: 24,
                           ),
-                          ElevatedButton(onPressed: () {}, child: Text("Login"))
+                          ElevatedButton(
+                              onPressed: () async {
+                                if (formKey.currentState?.validate() == true) {
+                                  String err = await ref
+                                      .read(userProvider.notifier)
+                                      .login(
+                                          email: emailController.text,
+                                          password: passwordController.text);
+
+                                  if (err == 'success') {
+                                    if (context.mounted) {
+                                      showSnackBar(context, "Login successful");
+                                    }
+                                  } else {
+                                    // TODO handle message error invalid-credentials
+                                    if (context.mounted) {
+                                      showSnackBar(context, err);
+                                    }
+                                  }
+                                }
+                              },
+                              child: Text("Login"))
                         ],
                       )),
                   const SizedBox(

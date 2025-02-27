@@ -5,7 +5,6 @@ import 'package:my_app/screens/home.dart';
 import 'package:my_app/screens/login.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:my_app/screens/register.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
