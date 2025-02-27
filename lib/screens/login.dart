@@ -2,10 +2,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:my_app/components/back_button.dart';
+import 'package:my_app/components/back_leading_button.dart';
+import 'package:my_app/components/footer_authen.dart';
 import 'package:my_app/components/input.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:my_app/components/social_media_login.dart';
 
 class Login extends ConsumerStatefulWidget {
   const Login({super.key});
@@ -81,66 +80,12 @@ class LoginState extends ConsumerState<Login> {
                   const SizedBox(
                     height: 60,
                   ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Divider(
-                          color: Theme.of(context).colorScheme.secondary,
-                          thickness: 1.5,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: Text("Or Login with"),
-                      ),
-                      Expanded(
-                        child: Divider(
-                          color: Theme.of(context).colorScheme.secondary,
-                          thickness: 1.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      socialMediaLogin(
-                          context: context,
-                          icon: Icons.facebook_outlined,
-                          color: Color(0xFF4092FF),
-                          onTap: () {}),
-                      socialMediaLogin(
-                          context: context,
-                          icon: FontAwesomeIcons.google,
-                          onTap: () {},
-                          size: 28),
-                      socialMediaLogin(
-                          context: context,
-                          icon: Icons.apple_outlined,
-                          onTap: () {}),
-                    ],
-                  ),
-                  const SizedBox(
-                    height: 60,
-                  ),
-                  RichText(
-                      text: TextSpan(
-                          text: "Don’t have an account? ",
-                          style: GoogleFonts.urbanist(color: Colors.black),
-                          children: [
-                        TextSpan(
-                            text: "Register Now",
-                            style: GoogleFonts.urbanist(
-                                color: Color(0xFF35C2C1),
-                                fontWeight: FontWeight.bold),
-                            recognizer: TapGestureRecognizer()
-                              ..onTap = () => () {
-                                    Navigator.pushNamed(context, '/register');
-                                  })
-                      ]))
+                  footerAuthen(
+                      context: context,
+                      dividertext: "Or Login With",
+                      footerText: "Don’t have an account? ",
+                      footerLinkText: "Register Now",
+                      to: "/register")
                 ],
               )
             ],
