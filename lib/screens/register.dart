@@ -93,7 +93,7 @@ class RegisterState extends ConsumerState<Register> {
                                     confirmPasswordController.text) {
                                   String err = await ref
                                       .read(userProvider.notifier)
-                                      .createUser(
+                                      .register(
                                         username: usernameController.text,
                                         email: emailController.text,
                                         password: passwordController.text,
@@ -133,7 +133,8 @@ class RegisterState extends ConsumerState<Register> {
                     dividertext: "Or Register With",
                     footerText: "Already have an account? ",
                     footerLinkText: "Login Now",
-                    to: "/login")
+                    to: "/login",
+                    ref: ref)
               ],
             )
           ],
