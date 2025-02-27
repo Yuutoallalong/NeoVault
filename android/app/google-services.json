@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "134687736757",
+    "project_id": "neovault-add29",
+    "storage_bucket": "neovault-add29.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:134687736757:android:8e1011f90371755dc00ffc",
+        "android_client_info": {
+          "package_name": "com.example.my_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpznJr4lPh_VUIroveeadUpT-D-4BsBPs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
