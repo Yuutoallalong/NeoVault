@@ -87,7 +87,8 @@ class LoginState extends ConsumerState<Login> {
 
                                   if (err == 'success') {
                                     if (context.mounted) {
-                                      showSnackBar(context, "Login successful");
+                                      Navigator.pushReplacementNamed(
+                                          context, '/mock');
                                     }
                                   } else {
                                     // TODO handle message error invalid-credentials

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/screens/home.dart';
 import 'package:my_app/screens/login.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_app/screens/mock.dart';
 import 'package:my_app/screens/register.dart';
 
 Future<void> main() async {
@@ -45,7 +46,8 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => Home(),
         '/login': (context) => Login(),
-        '/register': (context) => Register()
+        '/register': (context) => Register(),
+        '/mock': (context) => Mock()
       },
     );
   }
