@@ -1,6 +1,5 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:my_app/components/social_media_login.dart';
 import 'package:my_app/provider/user_provider.dart';
@@ -42,20 +41,19 @@ Widget footerAuthen(
         children: [
           socialMediaLogin(
               context: context,
-              icon: Icons.facebook_outlined,
-              color: Color(0xFF4092FF),
+              asset: "assets/icons/facebook.png",
               onTap: () {}),
           socialMediaLogin(
               context: context,
-              icon: FontAwesomeIcons.google,
+              asset: "assets/icons/google.png",
               onTap: () async {
                 var credentials =
                     await ref.read(userProvider.notifier).signInWithGoogle();
                 print("!!!!!!!!!credentials!!!!!!!!!!! $credentials");
               },
-              size: 28),
+              ),
           socialMediaLogin(
-              context: context, icon: Icons.apple_outlined, onTap: () {}),
+              context: context, asset: "assets/icons/microsoft.png", onTap: () {}),
         ],
       ),
       const SizedBox(

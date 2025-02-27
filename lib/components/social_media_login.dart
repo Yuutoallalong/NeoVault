@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 Ink socialMediaLogin(
     {required BuildContext context,
-    required IconData icon,
+    String? asset,
+    // required IconData icon,
     Color? color,
     required GestureTapCallback onTap,
     double? size}) {
@@ -17,11 +18,13 @@ Ink socialMediaLogin(
     child: InkWell(
       borderRadius: BorderRadius.circular(10),
       onTap: onTap,
-      child: Icon(
-        icon,
-        color: color,
-        size: size ?? 35,
-      ),
+      child: asset != null
+          ? Image.asset(
+              asset,
+              width: size != null ? size * 0.6 : 20,
+              height: size != null ? size * 0.6 : 20,
+            )
+          : const SizedBox(),
     ),
   );
 }
