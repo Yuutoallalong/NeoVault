@@ -142,7 +142,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.0"
-<<<<<<< HEAD
   flutter_riverpod:
     dependency: "direct main"
     description:
@@ -151,29 +150,16 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.6.1"
-=======
-  flutter_social_button:
-    dependency: "direct main"
-    description:
-      name: flutter_social_button
-      sha256: "9feee9f6304727f6a8d024aa7135bb6e4c97f10829c0ed84d85a3f2c4aa64cf7"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.6+1"
->>>>>>> login
   flutter_test:
     dependency: "direct dev"
     description: flutter
     source: sdk
     version: "0.0.0"
-<<<<<<< HEAD
   flutter_web_plugins:
     dependency: transitive
     description: flutter
     source: sdk
     version: "0.0.0"
-=======
->>>>>>> login
   font_awesome_flutter:
     dependency: "direct main"
     description:
@@ -182,7 +168,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "10.8.0"
-<<<<<<< HEAD
   google_fonts:
     dependency: "direct main"
     description:
@@ -255,8 +240,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
-=======
->>>>>>> login
   leak_tracker:
     dependency: transitive
     description:
