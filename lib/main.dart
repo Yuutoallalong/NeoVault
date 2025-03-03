@@ -1,11 +1,11 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:my_app/screens/home.dart';
 import 'package:my_app/screens/login.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:my_app/screens/mock.dart';
 import 'package:my_app/screens/register.dart';
+import 'package:my_app/screens/file_list.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,7 +47,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => Home(),
         '/login': (context) => Login(),
         '/register': (context) => Register(),
-        '/mock': (context) => Mock()
+        '/filelist': (context) => FileList()()
       },
     );
   }
