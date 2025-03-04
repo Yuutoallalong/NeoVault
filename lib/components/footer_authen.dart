@@ -47,6 +47,7 @@ Widget footerAuthen(
                 var credentials =
                     await ref.read(userProvider.notifier).signInWithFacebook();
                 print("User logged in: $credentials");
+                Navigator.pushReplacementNamed(context, '/filelist');
               } catch (e) {
                 print("Facebook login failed: $e");
               }
