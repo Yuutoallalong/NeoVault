@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_app/screen/detail.dart';
 import 'package:my_app/screen/upload.dart';
 
 Future<void> main() async {
@@ -26,7 +27,7 @@ class MyApp extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.black,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 22),
+            padding: const EdgeInsets.symmetric(vertical: 20),
             textStyle: const TextStyle(fontWeight: FontWeight.bold),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -43,6 +44,7 @@ class MyApp extends StatelessWidget {
         // '/register': (context) => Register(),
         // '/mock': (context) => Mock()
         '/upload': (context) => Upload(),
+        '/detail': (context) => Detail()
       },
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/components/back_leading_button.dart';
+import 'package:my_app/components/file_settings.dart';
 
 class Detail extends StatefulWidget {
   const Detail({super.key});
@@ -9,14 +10,28 @@ class Detail extends StatefulWidget {
 }
 
 class _DetailState extends State<Detail> {
+  bool switchStatus = false;
+  final messageController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
+  final passwordController = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(leading: backLeadingButton(context: context)),
+      appBar: AppBar(
+        leading: backLeadingButton(context: context),
+        title: Text(
+          "Heisenburg",
+          style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
         child: ListView(
           children: [
+            const SizedBox(
+              height: 180,
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -29,15 +44,19 @@ class _DetailState extends State<Detail> {
                         Text(
                           "WongnaiDocs",
                           style: TextStyle(
-                            fontSize: 40,
+                            fontSize: 36,
                             fontWeight: FontWeight.bold,
                           ),
+                          softWrap: true,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           "size: 1.1 GB",
                           style: TextStyle(
                             fontSize: 16,
-                            color: Color(0xff626272),
+                            color: Color(0xff626272)
+                                .withAlpha((255 * 0.6).toInt()),
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
@@ -46,50 +65,21 @@ class _DetailState extends State<Detail> {
                 ),
               ],
             ),
-            const SizedBox(height: 25),
-            TextField(
-              decoration: InputDecoration(
-                hintText: 'nobody knows',
-                hintStyle: TextStyle(color: Color(0xff626272)),
-                filled: true,
-                fillColor: Color(0xfff7f6fb),
-              ),
-            ),
-            Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.access_time, color: Color(0xff626272)),
-                        Text("Expiration date"),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          "7 days",
-                          style: TextStyle(color: Color(0xff626272)),
-                        ),
-                        Icon(Icons.edit, color: Color(0xff626272)),
-                      ],
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.lock, color: Color(0xff626272)),
-                        Text("Password"),
-                      ],
-                    ),
-                    Switch(value: false, onChanged: (value) {}),
-                  ],
-                ),
-              ],
+            const SizedBox(height: 40),
+            fileSettings(
+                context: context,
+                messageController: messageController,
+                switchStatus: switchStatus,
+                switchOnChanged: (bool value) {
+                  setState(() {
+                    switchStatus = value;
+                  });
+                },
+                formKey: formKey,
+                hintText: "nobody knows",
+                dayLeft: 7),
+            const SizedBox(
+              height: 50,
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
