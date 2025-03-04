@@ -76,6 +76,7 @@ class UserNotifier extends StateNotifier<User?> {
   Future<void> logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
     await GoogleSignIn().signOut();
+    await FacebookAuth.instance.logOut();
     if (context.mounted) {
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
     }
