@@ -40,20 +40,31 @@ Widget footerAuthen(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           socialMediaLogin(
-              context: context,
-              asset: "assets/icons/facebook.png",
-              onTap: () {}),
-          socialMediaLogin(
-              context: context,
-              asset: "assets/icons/google.png",
-              onTap: () async {
+            context: context,
+            asset: "assets/icons/facebook.png",
+            onTap: () async {
+              try {
                 var credentials =
-                    await ref.read(userProvider.notifier).signInWithGoogle();
-                print("!!!!!!!!!credentials!!!!!!!!!!! $credentials");
-              },
-              ),
+                    await ref.read(userProvider.notifier).signInWithFacebook();
+                print("User logged in: $credentials");
+              } catch (e) {
+                print("Facebook login failed: $e");
+              }
+            },
+          ),
           socialMediaLogin(
-              context: context, asset: "assets/icons/microsoft.png", onTap: () {}),
+            context: context,
+            asset: "assets/icons/google.png",
+            onTap: () async {
+              var credentials =
+                  await ref.read(userProvider.notifier).signInWithGoogle();
+              print("!!!!!!!!!credentials!!!!!!!!!!! $credentials");
+            },
+          ),
+          socialMediaLogin(
+              context: context,
+              asset: "assets/icons/microsoft.png",
+              onTap: () {}),
         ],
       ),
       const SizedBox(
