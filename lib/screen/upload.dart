@@ -94,9 +94,6 @@ class _UploadState extends State<Upload> {
                   },
                   child: Text('Upload'),
                 ),
-                ElevatedButton(
-                    onPressed: () => Navigator.pushNamed(context, '/detail'),
-                    child: Text("mock"))
               ],
             ),
           ],
