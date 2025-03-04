@@ -1,8 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+Future<void> clearAuthData() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.clear();
+}
 
 class UserNotifier extends StateNotifier<User?> {
   UserNotifier() : super(FirebaseAuth.instance.currentUser);

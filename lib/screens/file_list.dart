@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:my_app/components/grid_file.dart';
+import 'package:my_app/provider/user_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class FileList extends StatelessWidget {
   const FileList({super.key});
@@ -10,9 +12,9 @@ class FileList extends StatelessWidget {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
-        child: Icon(Icons.add, color: Colors.white),
         backgroundColor: Colors.black,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        child: Icon(Icons.add, color: Colors.white),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -22,17 +24,30 @@ class FileList extends StatelessWidget {
                 Padding(
                   padding: EdgeInsets.only(top: 70, left: 20),
                   child: Text(
-                    "Heisenburg",
+                    "Heisenburg", //will replace with username
                     style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
                   ),
                 ),
-                Spacer(),
+                const Spacer(),
                 Padding(
-                  padding: EdgeInsets.only(top: 70, right: 20),
-                  child: SvgPicture.asset(
-                    'assets/svg/logout.svg',
-                    width: 35,
-                    height: 35,
+                  padding: const EdgeInsets.only(top: 70, right: 20),
+                  child: Consumer(
+                    builder: (context, ref, child) {
+                      return InkWell(
+                        onTap: () async {
+                            await ref.read(userProvider.notifier).logout(context);
+                          await clearAuthData();
+                          if (context.mounted) {
+                            Navigator.pushReplacementNamed(context, '/login');
+                          }
+                        },
+                        child: SvgPicture.asset(
+                          'assets/svg/logout.svg',
+                          width: 35,
+                          height: 35,
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],

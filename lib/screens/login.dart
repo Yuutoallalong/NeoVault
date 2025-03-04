@@ -88,7 +88,7 @@ class LoginState extends ConsumerState<Login> {
                                   if (err == 'success') {
                                     if (context.mounted) {
                                       Navigator.pushReplacementNamed(
-                                          context, '/mock');
+                                          context, '/filelist');
                                     }
                                   } else {
                                     
