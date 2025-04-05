@@ -2,10 +2,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_app/screens/detail.dart';
 import 'package:my_app/screens/home.dart';
 import 'package:my_app/screens/login.dart';
 import 'package:my_app/screens/register.dart';
 import 'package:my_app/screens/file_list.dart';
+import 'package:my_app/screens/upload.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,7 +46,8 @@ class MyApp extends StatelessWidget {
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 22),
           textStyle: const TextStyle(fontWeight: FontWeight.bold),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           minimumSize: const Size(double.infinity, 50),
         ),
       ),
@@ -62,6 +65,8 @@ class MyApp extends StatelessWidget {
       '/login': (context) => const Login(),
       '/register': (context) => const Register(),
       '/filelist': (context) => const FileList(),
+      '/filelist/:id': (context) => const Detail(),
+      '/upload': (context) => const Upload()
     };
   }
 }
