@@ -9,7 +9,7 @@ plugins {
 dependencies {
   // Import the Firebase BoM
   implementation(platform("com.google.firebase:firebase-bom:33.9.0"))
-
+  implementation(platform("com.facebook.android:facebook-android-sdk:16.1.3"))
 
   // TODO: Add the dependencies for Firebase products you want to use
   // When using the BoM, don't specify versions in Firebase dependencies
@@ -55,3 +55,5 @@ android {
 flutter {
     source = "../.."
 }
+
+
