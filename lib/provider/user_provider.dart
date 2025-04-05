@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:flutter/foundation.dart';
 
 Future<void> clearAuthData() async {
   final prefs = await SharedPreferences.getInstance();
@@ -71,6 +72,24 @@ class UserNotifier extends StateNotifier<User?> {
 
     // Once signed in, return the UserCredential
     return FirebaseAuth.instance.signInWithCredential(facebookAuthCredential);
+  }
+
+  Future<UserCredential> signInWithMicrosoft() async {
+    final microsoftProvider = MicrosoftAuthProvider();
+      microsoftProvider.addScope("email");
+      microsoftProvider.addScope("profile");
+
+      UserCredential credential;
+      if (kIsWeb) {
+        credential =
+            await FirebaseAuth.instance.signInWithPopup(microsoftProvider);
+      } else {
+        credential =
+            await FirebaseAuth.instance.signInWithProvider(microsoftProvider);
+      }
+
+      setUser(credential.user);
+      return credential;
   }
 
   Future<void> logout(BuildContext context) async {

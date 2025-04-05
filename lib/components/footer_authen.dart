@@ -63,9 +63,19 @@ Widget footerAuthen(
             },
           ),
           socialMediaLogin(
-              context: context,
-              asset: "assets/icons/microsoft.png",
-              onTap: () {}),
+            context: context,
+            asset: "assets/icons/microsoft.png",
+            onTap: () async {
+              try {
+                var credentials =
+                    await ref.read(userProvider.notifier).signInWithMicrosoft();
+                print("User logged in: $credentials");
+                Navigator.pushReplacementNamed(context, '/filelist');
+              } catch (e) {
+                print("Microsoft login failed: $e");
+              }
+            },
+          ),
         ],
       ),
       const SizedBox(
