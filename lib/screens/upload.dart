@@ -16,6 +16,7 @@ class _UploadState extends ConsumerState<Upload> {
   final messageController = TextEditingController();
   final formKey = GlobalKey<FormState>();
   final passwordController = TextEditingController();
+  bool upload = false;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,30 +52,74 @@ class _UploadState extends ConsumerState<Upload> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.cloud_upload_outlined,
-                        size: 36,
-                      ),
-                      Text(
-                        "Upload here",
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 16),
-                      ),
-                      ElevatedButton(
-                        onPressed: () async {
-                          print("tapped");
-                          var FileNotifier =
-                              await ref.read(fileProvider.notifier).pickFile();
+                      Consumer(
+                        builder: (context, ref, _) {
+                          final file = ref.watch(fileProvider);
+                          if (file == null) {
+                            return Column(
+                              children: [
+                                Icon(
+                                  Icons.cloud_upload_outlined,
+                                  size: 36,
+                                ),
+                                Text(
+                                  "Upload here",
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    await ref
+                                        .read(fileProvider.notifier)
+                                        .pickFile();
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 0),
+                                    backgroundColor: Color(0xff5992b7),
+                                    minimumSize: Size(140, 40),
+                                  ),
+                                  child: Text(
+                                    "Select file",
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w400),
+                                  ),
+                                ),
+                              ],
+                            );
+                          } else {
+                            return Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 20),
+                                  child: Text(
+                                    'Selected file : ${file.name}',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: 18),
+                                  ),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    ref.read(fileProvider.notifier).clearFile();
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 0),
+                                    backgroundColor: Colors.red,
+                                    minimumSize: Size(140, 40),
+                                  ),
+                                  child: Text(
+                                    "Cancel",
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w400),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
                         },
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 0),
-                          backgroundColor: Color(0xff5992b7),
-                          minimumSize: Size(140, 40),
-                        ),
-                        child: Text(
-                          "Select file",
-                          style: TextStyle(fontWeight: FontWeight.w400),
-                        ),
                       ),
                     ],
                   ),
