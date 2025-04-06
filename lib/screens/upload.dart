@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/components/back_leading_button.dart';
 import 'package:my_app/components/file_settings.dart';
+import 'package:my_app/provider/file_picker_provider.dart';
 
-class Upload extends StatefulWidget {
+class Upload extends ConsumerStatefulWidget {
   const Upload({super.key});
 
   @override
-  State<Upload> createState() => _UploadState();
+  ConsumerState<Upload> createState() => _UploadState();
 }
 
-class _UploadState extends State<Upload> {
+class _UploadState extends ConsumerState<Upload> {
   bool switchStatus = false;
   final messageController = TextEditingController();
   final formKey = GlobalKey<FormState>();
@@ -59,7 +61,11 @@ class _UploadState extends State<Upload> {
                             fontWeight: FontWeight.w600, fontSize: 16),
                       ),
                       ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () async {
+                          print("tapped");
+                          var FileNotifier =
+                              await ref.read(fileProvider.notifier).pickFile();
+                        },
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 0),
                           backgroundColor: Color(0xff5992b7),
