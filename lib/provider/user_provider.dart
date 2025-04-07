@@ -17,11 +17,15 @@ class UserNotifier extends StateNotifier<User?> {
     state = user;
   }
 
-  Future<String> login(
-      {required String email, required String password}) async {
+  Future<String> login({
+    required String email,
+    required String password,
+  }) async {
     try {
-      await FirebaseAuth.instance
-          .signInWithEmailAndPassword(email: email, password: password);
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
     } on FirebaseAuthException catch (e) {
       return e.code;
     }
@@ -35,8 +39,10 @@ class UserNotifier extends StateNotifier<User?> {
     required String password,
   }) async {
     try {
-      await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(email: email, password: password);
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
     } on FirebaseAuthException catch (e) {
       return e.code;
     }
@@ -83,5 +89,6 @@ class UserNotifier extends StateNotifier<User?> {
   }
 }
 
-final userProvider =
-    StateNotifierProvider<UserNotifier, User?>((ref) => UserNotifier());
+final userProvider = StateNotifierProvider<UserNotifier, User?>(
+  (ref) => UserNotifier(),
+);
