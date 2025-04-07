@@ -33,7 +33,7 @@ class FileInfo {
       name: data['name'] ?? '',
       url: data['url'] ?? '',
       createAt: (data['createAt'] as Timestamp).toDate(),
-      daysLeft: data['daysLeft'] ?? 0,
+      daysLeft: data['daysLeft'] ?? 7,
       expiredIn: (data['expiredIn'] as Timestamp).toDate(),
       locked: data['locked'] ?? false,
       filePassword: data['filePassword'] ?? '',

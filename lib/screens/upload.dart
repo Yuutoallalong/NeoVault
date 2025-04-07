@@ -17,6 +17,7 @@ class _UploadState extends ConsumerState<Upload> {
   final formKey = GlobalKey<FormState>();
   final passwordController = TextEditingController();
   bool upload = false;
+  int dayLeft = 7;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -135,9 +136,14 @@ class _UploadState extends ConsumerState<Upload> {
                         switchStatus = value;
                       });
                     },
+                    daysLeftOnChanged: (int value) {
+                      setState(() {
+                        dayLeft = value;
+                      });
+                    },
                     formKey: formKey,
                     hintText: "Add a message (optional)",
-                    dayLeft: 7),
+                    dayLeft: dayLeft),
                 ElevatedButton(
                   onPressed: () async {
                     final pickedFile = ref.read(fileProvider);
@@ -150,7 +156,8 @@ class _UploadState extends ConsumerState<Upload> {
                         pickedFile,
                         messageController.text,
                         passwordController.text,
-                        switchStatus);
+                        switchStatus,
+                        dayLeft);
                     ScaffoldMessenger.of(context)
                         .showSnackBar(SnackBar(content: Text('Uploaded')));
                     Navigator.pop(context);

@@ -14,6 +14,7 @@ class _DetailState extends State<Detail> {
   final messageController = TextEditingController();
   final formKey = GlobalKey<FormState>();
   final passwordController = TextEditingController();
+  int dayLeft = 7;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,9 +77,14 @@ class _DetailState extends State<Detail> {
                     switchStatus = value;
                   });
                 },
+                daysLeftOnChanged: (int value) {
+                  setState(() {
+                    dayLeft = value;
+                  });
+                },
                 formKey: formKey,
-                hintText: "nobody knows",
-                dayLeft: 7),
+                hintText: "Add a message (optional)",
+                dayLeft: dayLeft),
             const SizedBox(
               height: 50,
             ),

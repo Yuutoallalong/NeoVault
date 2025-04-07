@@ -20,7 +20,7 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
   }
 
   Future<void> uploadFile(PlatformFile pickedFile, String description,
-      String filePassword, bool locked) async {
+      String filePassword, bool locked, int daysLeft) async {
     if (pickedFile == null) {
       return;
     }
@@ -38,7 +38,7 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
       name: pickedFile.name,
       url: downloadUrl,
       createAt: DateTime.now(),
-      daysLeft: 30,
+      daysLeft: daysLeft,
       expiredIn: DateTime.now().add(Duration(days: 30)),
       locked: locked,
       filePassword: hashPassword(filePassword),

@@ -6,6 +6,7 @@ Widget fileSettings(
     required TextEditingController passwordController,
     required bool switchStatus,
     required Function(bool) switchOnChanged,
+    required Function(int) daysLeftOnChanged,
     required GlobalKey formKey,
     required String hintText,
     required int dayLeft}) {
@@ -51,17 +52,28 @@ Widget fileSettings(
               ),
               Row(
                 children: [
-                  Text(
-                    "$dayLeft day(s)",
-                    style: TextStyle(
-                      color: Color(0xff626272),
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 6,
-                  ),
-                  Icon(Icons.edit, color: Color(0xff626272)),
+                  DropdownButton<int>(
+                    value: dayLeft,
+                    items: [7, 14, 30, 60, 90].map((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(
+                          "$value day(s)",
+                          style: TextStyle(
+                            color: Color(0xff626272),
+                            fontSize: 16,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (int? newValue) {
+                      if (newValue != null) {
+                        daysLeftOnChanged(newValue);
+                      }
+                    },
+                    icon: Icon(Icons.edit, color: Color(0xff626272)),
+                    underline: SizedBox(),
+                  )
                 ],
               ),
             ],
