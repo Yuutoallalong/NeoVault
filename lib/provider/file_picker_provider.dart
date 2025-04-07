@@ -4,6 +4,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:my_app/models/fileInfo.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
 
 class FileNotifier extends StateNotifier<PlatformFile?> {
   FileNotifier() : super(null);
@@ -39,7 +41,7 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
       daysLeft: 30,
       expiredIn: DateTime.now().add(Duration(days: 30)),
       locked: locked,
-      filePassword: filePassword,
+      filePassword: hashPassword(filePassword),
       description: description,
       size: pickedFile.size.toDouble(),
     );
@@ -50,17 +52,18 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
   }
 
   Future<void> saveFileToFirestore(FileInfo fileInfo) async {
-    try {
-      final fileCollection = FirebaseFirestore.instance.collection('files');
-      await fileCollection.doc(fileInfo.id).set(fileInfo.toMap());
-      print('File uploaded and metadata saved to Firestore');
-    } catch (e) {
-      print('Error uploading file metadata to Firestore: $e');
-    }
+    final fileCollection = FirebaseFirestore.instance.collection('files');
+    await fileCollection.doc(fileInfo.id).set(fileInfo.toMap());
   }
 
   void clearFile() {
     state = null;
+  }
+
+  String hashPassword(String filePassword) {
+    final bytes = utf8.encode(filePassword);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
   }
 }
 
