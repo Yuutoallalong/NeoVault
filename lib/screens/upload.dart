@@ -138,10 +138,19 @@ class _UploadState extends ConsumerState<Upload> {
                     hintText: "Add a message (optional)",
                     dayLeft: 7),
                 ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text('Uploaded')));
+                  onPressed: () async {
+                    final pickedFile = ref.read(fileProvider);
+                    if (pickedFile == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('No file selected')));
+                      return;
+                    }
+                    await ref
+                        .read(fileProvider.notifier)
+                        .uploadFile(pickedFile);
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text('Uploaded')));
+                    Navigator.pop(context);
                   },
                   child: Text('Upload'),
                 ),
