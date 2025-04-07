@@ -2,19 +2,31 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:my_app/models/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 Future<void> clearAuthData() async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.clear();
 }
 
-class UserNotifier extends StateNotifier<User?> {
-  UserNotifier() : super(FirebaseAuth.instance.currentUser);
+class UserNotifier extends StateNotifier<MyUser?> {
+  UserNotifier() : super(null);
 
-  void setUser(User? user) {
-    state = user;
+  final firestore = FirebaseFirestore.instance;
+  void setUser(String email) async {
+    final userSnapshot = await firestore
+        .collection('users')
+        .where('email', isEqualTo: email)
+        .get();
+    final userDocs = userSnapshot.docs;
+    if (userDocs.isNotEmpty) {
+      final userData = userDocs[0].data();
+      MyUser currentUser = MyUser.fromJson(userData);
+      state = currentUser;
+    }
   }
 
   Future<String> login({
@@ -26,6 +38,7 @@ class UserNotifier extends StateNotifier<User?> {
         email: email,
         password: password,
       );
+      setUser(email);
     } on FirebaseAuthException catch (e) {
       return e.code;
     }
@@ -43,6 +56,12 @@ class UserNotifier extends StateNotifier<User?> {
         email: email,
         password: password,
       );
+      await firestore.collection('users').add({
+        'username': username,
+        'email': email,
+        'fileCount': 0,
+        'expiredFileCount': 0,
+      });
     } on FirebaseAuthException catch (e) {
       return e.code;
     }
@@ -89,6 +108,6 @@ class UserNotifier extends StateNotifier<User?> {
   }
 }
 
-final userProvider = StateNotifierProvider<UserNotifier, User?>(
+final userProvider = StateNotifierProvider<UserNotifier, MyUser?>(
   (ref) => UserNotifier(),
 );
