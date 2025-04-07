@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class File {
+class FileInfo {
   final String id;
   final String name;
   final String url;
@@ -14,7 +14,7 @@ class File {
   final String description;
   final double size;
 
-  File(
+  FileInfo(
       {required this.id,
       required this.name,
       required this.url,
@@ -26,10 +26,10 @@ class File {
       required this.description,
       required this.size});
 
-  factory File.fromFirestore(DocumentSnapshot doc) {
+  factory FileInfo.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    return File(
-      id: doc.id,
+    return FileInfo(
+      id: data['id'],
       name: data['name'] ?? '',
       url: data['url'] ?? '',
       createAt: (data['createAt'] as Timestamp).toDate(),

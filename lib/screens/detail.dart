@@ -69,6 +69,7 @@ class _DetailState extends State<Detail> {
             fileSettings(
                 context: context,
                 messageController: messageController,
+                passwordController: passwordController,
                 switchStatus: switchStatus,
                 switchOnChanged: (bool value) {
                   setState(() {

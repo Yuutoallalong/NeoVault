@@ -128,6 +128,7 @@ class _UploadState extends ConsumerState<Upload> {
                 fileSettings(
                     context: context,
                     messageController: messageController,
+                    passwordController: passwordController,
                     switchStatus: switchStatus,
                     switchOnChanged: (bool value) {
                       setState(() {
@@ -145,9 +146,11 @@ class _UploadState extends ConsumerState<Upload> {
                           SnackBar(content: Text('No file selected')));
                       return;
                     }
-                    await ref
-                        .read(fileProvider.notifier)
-                        .uploadFile(pickedFile);
+                    await ref.read(fileProvider.notifier).uploadFile(
+                        pickedFile,
+                        messageController.text,
+                        passwordController.text,
+                        switchStatus);
                     ScaffoldMessenger.of(context)
                         .showSnackBar(SnackBar(content: Text('Uploaded')));
                     Navigator.pop(context);

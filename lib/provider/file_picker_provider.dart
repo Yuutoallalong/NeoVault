@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:my_app/models/fileInfo.dart';
 
 class FileNotifier extends StateNotifier<PlatformFile?> {
   FileNotifier() : super(null);
@@ -16,7 +17,8 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
     return;
   }
 
-  Future<void> uploadFile(PlatformFile pickedFile) async {
+  Future<void> uploadFile(PlatformFile pickedFile, String description,
+      String filePassword, bool locked) async {
     if (pickedFile == null) {
       return;
     }
@@ -28,13 +30,33 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
 
     await ref.putFile(file);
 
-    // await FirebaseFirestore.instance.collection('users').doc(userId).set({
-    //   'fileName': pickedFile.name,
-    //   'fileUrl': downloadUrl,
-    //   'uploadedAt': Timestamp.now(),
-    // }, SetOptions(merge: true));
+    final downloadUrl = await ref.getDownloadURL();
+    final fileInfo = FileInfo(
+      id: FirebaseFirestore.instance.collection('files').doc().id,
+      name: pickedFile.name,
+      url: downloadUrl,
+      createAt: DateTime.now(),
+      daysLeft: 30,
+      expiredIn: DateTime.now().add(Duration(days: 30)),
+      locked: locked,
+      filePassword: filePassword,
+      description: description,
+      size: pickedFile.size.toDouble(),
+    );
+
+    await saveFileToFirestore(fileInfo);
 
     state = null;
+  }
+
+  Future<void> saveFileToFirestore(FileInfo fileInfo) async {
+    try {
+      final fileCollection = FirebaseFirestore.instance.collection('files');
+      await fileCollection.doc(fileInfo.id).set(fileInfo.toMap());
+      print('File uploaded and metadata saved to Firestore');
+    } catch (e) {
+      print('Error uploading file metadata to Firestore: $e');
+    }
   }
 
   void clearFile() {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 Widget fileSettings(
     {required BuildContext context,
     required TextEditingController messageController,
+    required TextEditingController passwordController,
     required bool switchStatus,
     required Function(bool) switchOnChanged,
     required GlobalKey formKey,
@@ -100,6 +101,7 @@ Widget fileSettings(
           ? Form(
               key: formKey,
               child: TextFormField(
+                controller: passwordController,
                 decoration: InputDecoration(
                     hintText: 'Enter your password',
                     hintStyle: TextStyle(color: Colors.white),
