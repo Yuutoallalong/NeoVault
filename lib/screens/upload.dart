@@ -146,7 +146,7 @@ class _UploadState extends ConsumerState<Upload> {
                     dayLeft: dayLeft),
                 ElevatedButton(
                   onPressed: () async {
-                    final pickedFile = ref.read(fileProvider);
+                    final pickedFile = ref.watch(fileProvider);
                     if (pickedFile == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('No file selected')));

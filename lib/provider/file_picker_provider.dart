@@ -39,7 +39,7 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
       url: downloadUrl,
       createAt: DateTime.now(),
       daysLeft: daysLeft,
-      expiredIn: DateTime.now().add(Duration(days: 30)),
+      expiredIn: DateTime.now().add(Duration(days: daysLeft)),
       locked: locked,
       filePassword: hashPassword(filePassword),
       description: description,
@@ -65,7 +65,30 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
     final digest = sha256.convert(bytes);
     return digest.toString();
   }
+
+  Future<List<FileInfo>> fetchFiles() async {
+    final querySnapshot =
+        await FirebaseFirestore.instance.collection('files').get();
+    List<FileInfo> files = [];
+
+    files = querySnapshot.docs.map((doc) {
+      return FileInfo.fromFirestore(doc);
+    }).toList();
+
+    return files;
+  }
 }
 
 final fileProvider =
     StateNotifierProvider<FileNotifier, PlatformFile?>((ref) => FileNotifier());
+
+final filesStreamProvider = StreamProvider<List<FileInfo>>((ref) {
+  return FirebaseFirestore.instance
+      .collection('files')
+      .snapshots()
+      .map((snapshot) {
+    return snapshot.docs.map((doc) {
+      return FileInfo.fromFirestore(doc);
+    }).toList();
+  });
+});

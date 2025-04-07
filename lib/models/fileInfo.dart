@@ -29,7 +29,7 @@ class FileInfo {
   factory FileInfo.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return FileInfo(
-      id: data['id'],
+      id: data['id'] ?? '',
       name: data['name'] ?? '',
       url: data['url'] ?? '',
       createAt: (data['createAt'] as Timestamp).toDate(),
