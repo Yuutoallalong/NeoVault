@@ -9,7 +9,6 @@ class GridFile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filesAsyncValue = ref.watch(filesStreamProvider);
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: filesAsyncValue.when(
@@ -17,7 +16,6 @@ class GridFile extends ConsumerWidget {
           if (files.isEmpty) {
             return const Center(child: Text('No files found.'));
           }
-
           return GridView.builder(
             itemCount: files.length,
             physics: const NeverScrollableScrollPhysics(),
@@ -49,7 +47,8 @@ class GridFile extends ConsumerWidget {
                         padding: EdgeInsets.only(top: 5, left: 125),
                         child: InkWell(
                           onTap: () {
-                            Navigator.pushNamed(context, '/filelist/:id');
+                            Navigator.pushNamed(context, '/filedetail',
+                                arguments: file.id);
                           },
                           child: SvgPicture.asset("assets/svg/edit.svg"),
                         ),
