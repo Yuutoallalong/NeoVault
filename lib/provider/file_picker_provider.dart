@@ -33,8 +33,10 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
     await ref.putFile(file);
 
     final downloadUrl = await ref.getDownloadURL();
+
+    final fileRef = FirebaseFirestore.instance.collection('files').doc();
     final fileInfo = FileInfo(
-      id: FirebaseFirestore.instance.collection('files').doc().id,
+      id: fileRef.id,
       name: pickedFile.name,
       url: downloadUrl,
       createAt: DateTime.now(),
@@ -52,8 +54,12 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
   }
 
   Future<void> saveFileToFirestore(FileInfo fileInfo) async {
-    final fileCollection = FirebaseFirestore.instance.collection('files');
-    await fileCollection.doc(fileInfo.id).set(fileInfo.toMap());
+    final fileRef = FirebaseFirestore.instance.collection('files').doc();
+
+    final fileData = fileInfo.toMap();
+    fileData['id'] = fileRef.id;
+
+    await fileRef.set(fileData);
   }
 
   void clearFile() {
@@ -76,6 +82,17 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
     }).toList();
 
     return files;
+  }
+
+  Future<FileInfo?> fetchFileById(String id) async {
+    final doc =
+        await FirebaseFirestore.instance.collection('files').doc(id).get();
+
+    if (doc.exists) {
+      return FileInfo.fromFirestore(doc);
+    } else {
+      return null;
+    }
   }
 }
 
