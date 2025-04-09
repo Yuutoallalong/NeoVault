@@ -11,7 +11,9 @@ class FileList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          Navigator.pushNamed(context, '/upload');
+        },
         backgroundColor: Colors.black,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
         child: Icon(Icons.add, color: Colors.white),
@@ -35,7 +37,7 @@ class FileList extends StatelessWidget {
                     builder: (context, ref, child) {
                       return InkWell(
                         onTap: () async {
-                            await ref.read(userProvider.notifier).logout(context);
+                          await ref.read(userProvider.notifier).logout(context);
                           await clearAuthData();
                           if (context.mounted) {
                             Navigator.pushReplacementNamed(context, '/login');

@@ -21,12 +21,19 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'NeoVault',
-      debugShowCheckedModeBanner: false,
-      theme: _buildTheme(),
-      initialRoute: '/',
-      routes: _buildRoutes(),
-    );
+        title: 'NeoVault',
+        debugShowCheckedModeBanner: false,
+        theme: _buildTheme(),
+        initialRoute: '/',
+        routes: _buildRoutes(),
+        onGenerateRoute: (RouteSettings settings) {
+          if (settings.name == '/filedetail') {
+            final fileId = settings.arguments as String;
+            return MaterialPageRoute(
+              builder: (context) => Detail(fileId: fileId),
+            );
+          }
+        });
   }
 
   ThemeData _buildTheme() {
@@ -65,7 +72,6 @@ class MyApp extends StatelessWidget {
       '/login': (context) => const Login(),
       '/register': (context) => const Register(),
       '/filelist': (context) => const FileList(),
-      '/filelist/:id': (context) => const Detail(),
       '/upload': (context) => const Upload()
     };
   }
