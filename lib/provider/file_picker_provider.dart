@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'package:my_app/provider/AESHelper.dart';
 
 class FileNotifier extends StateNotifier<PlatformFile?> {
   FileNotifier() : super(null) {
@@ -107,32 +109,52 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
       return;
     }
 
-    final path = 'files/${pickedFile.name}';
-    final file = File(pickedFile.path!);
+    try {
+      final originalFile = File(pickedFile.path!);
+      final fileBytes = await originalFile.readAsBytes();
 
-    final ref = FirebaseStorage.instance.ref().child(path);
+      final encryptionPassword =
+          filePassword.isNotEmpty ? filePassword : 'default_secure_password';
 
-    await ref.putFile(file);
+      print("Encrypting with password: $encryptionPassword"); // Debug log
 
-    final downloadUrl = await ref.getDownloadURL();
+      // Encrypt the file
+      final encryptedBytes =
+          AESHelper.encryptFile(fileBytes, encryptionPassword);
 
-    final fileRef = FirebaseFirestore.instance.collection('files').doc();
-    final fileInfo = FileInfo(
-      id: fileRef.id,
-      name: pickedFile.name,
-      url: downloadUrl,
-      createAt: DateTime.now(),
-      daysLeft: daysLeft,
-      expiredIn: DateTime.now().add(Duration(days: daysLeft)),
-      locked: locked,
-      filePassword: hashPassword(filePassword),
-      description: description,
-      size: pickedFile.size.toDouble(),
-    );
+      // Create a temporary encrypted file
+      final tempDir = await getTemporaryDirectory();
+      final encryptedPath = '${tempDir.path}/${pickedFile.name}.enc';
+      final encryptedFile = File(encryptedPath);
+      await encryptedFile.writeAsBytes(encryptedBytes);
 
-    await saveFileToFirestore(fileInfo);
+      final path = 'files/${pickedFile.name}';
+      final ref = FirebaseStorage.instance.ref().child(path);
 
-    state = null;
+      await ref.putFile(encryptedFile);
+      final downloadUrl = await ref.getDownloadURL();
+
+      final fileRef = FirebaseFirestore.instance.collection('files').doc();
+      final fileInfo = FileInfo(
+        id: fileRef.id,
+        name: pickedFile.name,
+        url: downloadUrl,
+        createAt: DateTime.now(),
+        daysLeft: daysLeft,
+        expiredIn: DateTime.now().add(Duration(days: daysLeft)),
+        locked: locked,
+        filePassword: hashPassword(filePassword),
+        description: description,
+        size: pickedFile.size.toDouble(),
+      );
+
+      await saveFileToFirestore(fileInfo);
+
+      await encryptedFile.delete();
+      state = null;
+    } catch (e) {
+      print('Error uploading file: $e');
+    }
   }
 
   Future<void> saveFileToFirestore(FileInfo fileInfo) async {
@@ -269,49 +291,96 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
 
   Future<void> previewFile(BuildContext context, FileInfo fileInfo) async {
     try {
-      // Only check for password if the file is locked AND has a password
-      if (fileInfo.locked && fileInfo.filePassword.isNotEmpty) {
-        // Show password dialog
-        String? enteredPassword = await _showPasswordDialog(context);
+      String? password;
 
-        // If user cancels the dialog or enters no password
-        if (enteredPassword == null || enteredPassword.isEmpty) {
+      // Get password if needed
+      if (fileInfo.locked && fileInfo.filePassword.isNotEmpty) {
+        password = await _showPasswordDialog(context);
+
+        if (password == null || password.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Password required to preview this file')),
           );
           return;
         }
 
-        // Verify password
-        String hashedEnteredPassword = hashPassword(enteredPassword);
+        // Verify password - compare HASHED passwords
+        String hashedEnteredPassword = hashPassword(password);
         if (hashedEnteredPassword != fileInfo.filePassword) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Incorrect password')),
           );
           return;
         }
-        // Password verified, continue with file preview
+
+        // IMPORTANT: Use the raw password for decryption, not the hashed version
+        // This is the key change: use the raw password that was used for encryption
+        print("Decrypting with password: $password"); // Debug log
+      } else {
+        password = 'default_secure_password'; // Must match the upload password
       }
 
-      // File preview code - runs for all files (password-protected or not)
+      // Download the encrypted file
       final tempDir = await getTemporaryDirectory();
-      final filePath = '${tempDir.path}/${fileInfo.name}';
-      final file = File(filePath);
+      final encryptedPath = '${tempDir.path}/${fileInfo.name}.enc';
+      final encryptedFile = File(encryptedPath);
 
-      if (!await file.exists()) {
-        // Download from Firebase Storage
-        await FirebaseStorage.instance
+      if (!await encryptedFile.exists()) {
+        final task = FirebaseStorage.instance
             .refFromURL(fileInfo.url)
-            .writeToFile(file);
+            .writeToFile(encryptedFile);
+
+        await task.whenComplete(() {});
+
+        // Verify download completed successfully
+        if (task.snapshot.state != TaskState.success) {
+          throw Exception('Download failed');
+        }
       }
 
-      // Open with native viewer
-      final result = await OpenFile.open(filePath);
+      // Add debug logging
+      final fileSize = await encryptedFile.length();
+      print("Downloaded encrypted file size: $fileSize bytes");
+
+      // Read encrypted data
+      final encryptedBytes = await encryptedFile.readAsBytes();
+      if (encryptedBytes.length < 33) {
+        // Salt (16) + IV (16) + at least some data
+        throw Exception('Invalid encrypted file: file too small');
+      }
+
+      // Decrypt the file with the RAW password, not hashed
+      Uint8List decryptedBytes;
+      try {
+        decryptedBytes = AESHelper.decryptFile(encryptedBytes, password);
+      } catch (e) {
+        print('Detailed decryption error: ${e.toString()}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Decryption failed: ${e.toString()}')),
+        );
+        return;
+      }
+
+      // Save the decrypted file to a temporary location
+      final decryptedPath = '${tempDir.path}/decrypted_${fileInfo.name}';
+      final decryptedFile = File(decryptedPath);
+      await decryptedFile.writeAsBytes(decryptedBytes);
+
+      // Open the decrypted file with the native viewer
+      final result = await OpenFile.open(decryptedPath);
       if (result.type != ResultType.done) {
         throw Exception(result.message);
       }
+
+      // Optional: Clean up temporary files after a delay
+      Future.delayed(Duration(minutes: 5), () {
+        try {
+          encryptedFile.delete();
+          decryptedFile.delete();
+        } catch (_) {}
+      });
     } catch (e) {
-      // Show error in a snackbar
+      print('Preview error: ${e.toString()}');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Cannot preview file: ${e.toString()}')),
       );

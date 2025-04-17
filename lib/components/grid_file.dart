@@ -69,7 +69,7 @@ class GridFile extends ConsumerWidget {
                       ),
                       Padding(
                         padding:
-                            EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         child: Text(
                           file.name,
                           style: TextStyle(
