@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/components/back_leading_button.dart';
 import 'package:my_app/components/file_settings.dart';
+import 'package:my_app/provider/file_picker_provider.dart';
 
-class Upload extends StatefulWidget {
+class Upload extends ConsumerStatefulWidget {
   const Upload({super.key});
 
   @override
-  State<Upload> createState() => _UploadState();
+  ConsumerState<Upload> createState() => _UploadState();
 }
 
-class _UploadState extends State<Upload> {
+class _UploadState extends ConsumerState<Upload> {
   bool switchStatus = false;
   final messageController = TextEditingController();
   final formKey = GlobalKey<FormState>();
   final passwordController = TextEditingController();
+  bool upload = false;
+  int dayLeft = 7;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,26 +53,74 @@ class _UploadState extends State<Upload> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.cloud_upload_outlined,
-                        size: 36,
-                      ),
-                      Text(
-                        "Upload here",
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 16),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 0),
-                          backgroundColor: Color(0xff5992b7),
-                          minimumSize: Size(140, 40),
-                        ),
-                        child: Text(
-                          "Select file",
-                          style: TextStyle(fontWeight: FontWeight.w400),
-                        ),
+                      Consumer(
+                        builder: (context, ref, _) {
+                          final file = ref.watch(fileProvider);
+                          if (file == null) {
+                            return Column(
+                              children: [
+                                Icon(
+                                  Icons.cloud_upload_outlined,
+                                  size: 36,
+                                ),
+                                Text(
+                                  "Upload here",
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    await ref
+                                        .read(fileProvider.notifier)
+                                        .pickFile();
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 0),
+                                    backgroundColor: Color(0xff5992b7),
+                                    minimumSize: Size(140, 40),
+                                  ),
+                                  child: Text(
+                                    "Select file",
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w400),
+                                  ),
+                                ),
+                              ],
+                            );
+                          } else {
+                            return Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 20),
+                                  child: Text(
+                                    'Selected file : ${file.name}',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: 18),
+                                  ),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    ref.read(fileProvider.notifier).clearFile();
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 0),
+                                    backgroundColor: Colors.red,
+                                    minimumSize: Size(140, 40),
+                                  ),
+                                  child: Text(
+                                    "Cancel",
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w400),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+                        },
                       ),
                     ],
                   ),
@@ -77,20 +129,38 @@ class _UploadState extends State<Upload> {
                 fileSettings(
                     context: context,
                     messageController: messageController,
+                    passwordController: passwordController,
                     switchStatus: switchStatus,
                     switchOnChanged: (bool value) {
                       setState(() {
                         switchStatus = value;
                       });
                     },
+                    daysLeftOnChanged: (int value) {
+                      setState(() {
+                        dayLeft = value;
+                      });
+                    },
                     formKey: formKey,
                     hintText: "Add a message (optional)",
-                    dayLeft: 7),
+                    dayLeft: dayLeft),
                 ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text('Uploaded')));
+                  onPressed: () async {
+                    final pickedFile = ref.watch(fileProvider);
+                    if (pickedFile == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('No file selected')));
+                      return;
+                    }
+                    await ref.read(fileProvider.notifier).uploadFile(
+                        pickedFile,
+                        messageController.text,
+                        passwordController.text,
+                        switchStatus,
+                        dayLeft);
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text('Uploaded')));
+                    Navigator.pop(context);
                   },
                   child: Text('Upload'),
                 ),

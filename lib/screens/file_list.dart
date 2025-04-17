@@ -3,15 +3,19 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:my_app/components/grid_file.dart';
 import 'package:my_app/provider/user_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_app/provider/file_picker_provider.dart';
 
-class FileList extends StatelessWidget {
+class FileList extends ConsumerWidget {
   const FileList({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(userProvider);
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          Navigator.pushNamed(context, '/upload');
+        },
         backgroundColor: Colors.black,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
         child: Icon(Icons.add, color: Colors.white),
@@ -24,7 +28,8 @@ class FileList extends StatelessWidget {
                 Padding(
                   padding: EdgeInsets.only(top: 70, left: 20),
                   child: Text(
-                    "Heisenburg", //will replace with username
+                    "Yuu",
+                    // user!.username, //will replace with username
                     style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -35,7 +40,7 @@ class FileList extends StatelessWidget {
                     builder: (context, ref, child) {
                       return InkWell(
                         onTap: () async {
-                            await ref.read(userProvider.notifier).logout(context);
+                          await ref.read(userProvider.notifier).logout(context);
                           await clearAuthData();
                           if (context.mounted) {
                             Navigator.pushReplacementNamed(context, '/login');
