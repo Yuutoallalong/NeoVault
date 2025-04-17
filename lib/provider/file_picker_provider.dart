@@ -191,11 +191,35 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
 
   Future<void> previewFile(BuildContext context, FileInfo fileInfo) async {
     try {
+      // Check if file is password protected
+      if (fileInfo.locked && fileInfo.filePassword.isNotEmpty) {
+        // Show password dialog
+        String? enteredPassword = await _showPasswordDialog(context);
+
+        // If user cancels the dialog or enters no password
+        if (enteredPassword == null || enteredPassword.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Password required to preview this file')),
+          );
+          return;
+        }
+
+        // Verify password
+        String hashedEnteredPassword = hashPassword(enteredPassword);
+        if (hashedEnteredPassword != fileInfo.filePassword) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Incorrect password')),
+          );
+          return;
+        }
+        // Password verified, continue with file preview
+      }
+
       // For open_file approach:
       // First download the file to a temporary location if not already downloaded
       final tempDir = await getTemporaryDirectory();
       final filePath = '${tempDir.path}/${fileInfo.name}';
-      final file = File(filePath); 
+      final file = File(filePath);
 
       if (!await file.exists()) {
         // Download from Firebase Storage
@@ -215,6 +239,41 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
         SnackBar(content: Text('Cannot preview file: ${e.toString()}')),
       );
     }
+  }
+
+// Add this method to show a password dialog
+  Future<String?> _showPasswordDialog(BuildContext context) async {
+    TextEditingController passwordController = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Password Required'),
+          content: TextField(
+            controller: passwordController,
+            decoration: InputDecoration(
+              hintText: 'Enter file password',
+            ),
+            obscureText: true,
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(null);
+              },
+            ),
+            TextButton(
+              child: Text('Submit'),
+              onPressed: () {
+                Navigator.of(context).pop(passwordController.text);
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 
