@@ -6,8 +6,8 @@ import 'package:pointycastle/export.dart';
 
 class AESHelper {
   static final _random = Random.secure();
-  static const int _ivLength = 16; // AES block size
-  static const int _keyLength = 32; // 256 bits
+  static const int _ivLength = 16;
+  static const int _keyLength = 32;
 
   // Generate a secure key from password using PBKDF2
   static Uint8List deriveKeyFromPassword(String password, Uint8List salt,

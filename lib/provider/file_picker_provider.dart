@@ -205,48 +205,141 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
     int? daysLeft,
     bool? locked,
     String? password,
+    String? oldPassword,
   }) async {
+    // Add detailed logging for debugging
+
     try {
-      // First fetch the current file data
+      // 1. Fetch current file info
       FileInfo? currentFile = await fetchFileById(fileId);
       if (currentFile == null) {
         return false;
       }
 
-      // Calculate new expiration date if daysLeft changed
+      // 2. Handle expiration update
       DateTime expiredIn = currentFile.expiredIn;
       if (daysLeft != null && daysLeft != currentFile.daysLeft) {
         expiredIn = DateTime.now().add(Duration(days: daysLeft));
       }
 
-      // Hash password if provided
-      String filePassword = currentFile.filePassword;
-      if (locked == true && password != null && password.isNotEmpty) {
-        filePassword = hashPassword(password);
-      }
-
-      // Build update data
       final Map<String, dynamic> updateData = {
         'daysLeft': daysLeft ?? currentFile.daysLeft,
         'expiredIn': expiredIn,
       };
 
-      // Only update optional fields if they are provided
       if (description != null) {
         updateData['description'] = description;
       }
 
+      // 3. Initialize encryption logic
+      bool needsReEncryption = false;
+      String newEncryptionPassword = 'default_secure_password';
+      String currentEncryptionPassword = 'default_secure_password';
+      String updatedHashedPassword = currentFile.filePassword;
+
+      // 4. Handle password status change
       if (locked != null) {
         updateData['locked'] = locked;
-        // If locked status is false, clear password
-        if (!locked) {
+
+        // Case 1: Currently locked, turning off password protection
+        if (currentFile.locked && locked == false) {
+          // Verify old password before removing
+          if (oldPassword == null || oldPassword.isEmpty) {
+            return false;
+          }
+
+          String hashedOld = hashPassword(oldPassword);
+          if (hashedOld != currentFile.filePassword) {
+            return false;
+          }
+
+          // Password verified, now remove it
           updateData['filePassword'] = '';
-        } else if (password != null && password.isNotEmpty) {
-          updateData['filePassword'] = filePassword;
+          currentEncryptionPassword =
+              oldPassword; // Use old password to decrypt
+          newEncryptionPassword =
+              'default_secure_password'; // Use default for new encryption
+          needsReEncryption = true;
+        }
+        // Case 2: Adding password protection (was unlocked, now locking)
+        else if (!currentFile.locked && locked == true) {
+          // Setting a new password when previously unlocked
+          if (password == null || password.isEmpty) {
+            return false;
+          }
+
+          updatedHashedPassword = hashPassword(password);
+          updateData['filePassword'] = updatedHashedPassword;
+          currentEncryptionPassword =
+              'default_secure_password'; // Default for decryption
+          newEncryptionPassword = password; // New password for encryption
+          needsReEncryption = true;
+        }
+        // Case 3: Changing existing password (locked and staying locked)
+        else if (currentFile.locked &&
+            locked == true &&
+            password != null &&
+            password.isNotEmpty) {
+          // Verify old password before changing
+          if (oldPassword == null || oldPassword.isEmpty) {
+            return false;
+          }
+
+          String hashedOld = hashPassword(oldPassword);
+          if (hashedOld != currentFile.filePassword) {
+            return false;
+          }
+
+          // Old password verified, update to new password
+          updatedHashedPassword = hashPassword(password);
+          updateData['filePassword'] = updatedHashedPassword;
+          currentEncryptionPassword =
+              oldPassword; // Use old password to decrypt
+          newEncryptionPassword = password; // Use new password for encryption
+          needsReEncryption = true;
         }
       }
 
-      // Update document in Firestore
+      // 5. Re-encrypt the file if needed
+      if (needsReEncryption) {
+        try {
+          final tempDir = await getTemporaryDirectory();
+          final encryptedPath = '${tempDir.path}/${currentFile.name}.enc';
+          final encryptedFile = File(encryptedPath);
+
+          await FirebaseStorage.instance
+              .refFromURL(currentFile.url)
+              .writeToFile(encryptedFile);
+
+          final encryptedBytes = await encryptedFile.readAsBytes();
+
+          final decryptedBytes = AESHelper.decryptFile(
+            encryptedBytes,
+            currentEncryptionPassword,
+          );
+
+          final reEncryptedBytes =
+              AESHelper.encryptFile(decryptedBytes, newEncryptionPassword);
+
+          await encryptedFile.writeAsBytes(reEncryptedBytes);
+
+          final storageRef =
+              FirebaseStorage.instance.refFromURL(currentFile.url);
+          final uploadTask = storageRef.putFile(encryptedFile);
+          await uploadTask;
+
+          if (uploadTask.snapshot.state != TaskState.success) {
+            return false;
+          }
+
+          await encryptedFile.delete();
+        } catch (e) {
+          return false;
+        }
+      }
+
+      // 6. Update Firestore
+
       await FirebaseFirestore.instance
           .collection('files')
           .doc(fileId)
@@ -254,7 +347,6 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
 
       return true;
     } catch (e) {
-      print('Error updating file: $e');
       return false;
     }
   }
