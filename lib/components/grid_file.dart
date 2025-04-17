@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:my_app/provider/file_picker_provider.dart';
+import 'package:my_app/models/fileInfo.dart';
 
 class GridFile extends ConsumerWidget {
   const GridFile({super.key});
@@ -40,7 +41,9 @@ class GridFile extends ConsumerWidget {
                   ],
                 ),
                 child: InkWell(
-                  onTap: () {},
+                  onTap: () {
+                    ref.read(fileProvider.notifier).previewFile(context, file);
+                  },
                   child: Column(
                     children: [
                       Padding(

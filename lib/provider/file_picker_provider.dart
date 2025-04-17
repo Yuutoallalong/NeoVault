@@ -1,10 +1,14 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:my_app/models/fileInfo.dart';
 import 'package:crypto/crypto.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_file/open_file.dart';
+
 import 'dart:convert';
 
 class FileNotifier extends StateNotifier<PlatformFile?> {
@@ -92,6 +96,124 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
       return FileInfo.fromFirestore(doc);
     } else {
       return null;
+    }
+  }
+
+  Future<bool> updateFileSettings({
+    required String fileId,
+    String? description,
+    int? daysLeft,
+    bool? locked,
+    String? password,
+  }) async {
+    try {
+      // First fetch the current file data
+      FileInfo? currentFile = await fetchFileById(fileId);
+      if (currentFile == null) {
+        return false;
+      }
+
+      // Calculate new expiration date if daysLeft changed
+      DateTime expiredIn = currentFile.expiredIn;
+      if (daysLeft != null && daysLeft != currentFile.daysLeft) {
+        expiredIn = DateTime.now().add(Duration(days: daysLeft));
+      }
+
+      // Hash password if provided
+      String filePassword = currentFile.filePassword;
+      if (locked == true && password != null && password.isNotEmpty) {
+        filePassword = hashPassword(password);
+      }
+
+      // Build update data
+      final Map<String, dynamic> updateData = {
+        'daysLeft': daysLeft ?? currentFile.daysLeft,
+        'expiredIn': expiredIn,
+      };
+
+      // Only update optional fields if they are provided
+      if (description != null) {
+        updateData['description'] = description;
+      }
+
+      if (locked != null) {
+        updateData['locked'] = locked;
+        // If locked status is false, clear password
+        if (!locked) {
+          updateData['filePassword'] = '';
+        } else if (password != null && password.isNotEmpty) {
+          updateData['filePassword'] = filePassword;
+        }
+      }
+
+      // Update document in Firestore
+      await FirebaseFirestore.instance
+          .collection('files')
+          .doc(fileId)
+          .update(updateData);
+
+      return true;
+    } catch (e) {
+      print('Error updating file: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deleteFile(String fileId) async {
+    try {
+      // First fetch the file to get the storage URL
+      FileInfo? file = await fetchFileById(fileId);
+      if (file == null) {
+        return false;
+      }
+
+      // Delete from Firebase Storage
+      if (file.url.isNotEmpty) {
+        try {
+          // Extract storage reference from URL
+          final ref = FirebaseStorage.instance.refFromURL(file.url);
+          await ref.delete();
+        } catch (e) {
+          print('Error deleting from storage: $e');
+          // Continue with Firestore deletion even if Storage deletion fails
+        }
+      }
+
+      // Delete from Firestore
+      await FirebaseFirestore.instance.collection('files').doc(fileId).delete();
+
+      return true;
+    } catch (e) {
+      print('Error deleting file: $e');
+      return false;
+    }
+  }
+
+  Future<void> previewFile(BuildContext context, FileInfo fileInfo) async {
+    try {
+      // For open_file approach:
+      // First download the file to a temporary location if not already downloaded
+      final tempDir = await getTemporaryDirectory();
+      final filePath = '${tempDir.path}/${fileInfo.name}';
+      final file = File(filePath); 
+
+      if (!await file.exists()) {
+        // Download from Firebase Storage
+        await FirebaseStorage.instance
+            .refFromURL(fileInfo.url)
+            .writeToFile(file);
+      }
+
+      // Open with native viewer
+      final result = await OpenFile.open(filePath);
+      if (result.type != ResultType.done) {
+        throw Exception(result.message);
+      }
+    } catch (e) {
+      // Show error in a snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Cannot preview file: ${e.toString()}')),
+      );
     }
   }
 }
