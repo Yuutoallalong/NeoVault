@@ -115,7 +115,10 @@ class UserNotifier extends StateNotifier<MyUser?> {
     await FacebookAuth.instance.logOut();
     state = null;
     if (context.mounted) {
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      if (context.mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+            context, '/login', ModalRoute.withName('/'));
+      }
     }
   }
 
