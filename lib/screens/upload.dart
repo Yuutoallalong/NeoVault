@@ -26,7 +26,7 @@ class _UploadState extends ConsumerState<Upload> {
       appBar: AppBar(
         leading: backLeadingButton(context: context),
         title: Text(
-          "Yuu",
+          user!.username,
           style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
