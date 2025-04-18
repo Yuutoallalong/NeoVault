@@ -136,17 +136,18 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
 
       final fileRef = FirebaseFirestore.instance.collection('files').doc();
       final fileInfo = FileInfo(
-        id: fileRef.id,
-        name: pickedFile.name,
-        url: downloadUrl,
-        createAt: DateTime.now(),
-        daysLeft: daysLeft,
-        expiredIn: DateTime.now().add(Duration(days: daysLeft)),
-        locked: locked,
-        filePassword: hashPassword(filePassword),
-        description: description,
-        size: pickedFile.size.toDouble(),
-      );
+          id: fileRef.id,
+          name: pickedFile.name,
+          url: downloadUrl,
+          createAt: DateTime.now(),
+          daysLeft: daysLeft,
+          expiredIn: DateTime.now().add(Duration(days: daysLeft)),
+          locked: locked,
+          filePassword: hashPassword(filePassword),
+          description: description,
+          size: pickedFile.size.toDouble(),
+          userId: "888" //mockup
+          );
 
       await saveFileToFirestore(fileInfo);
 
@@ -174,18 +175,6 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
     final bytes = utf8.encode(filePassword);
     final digest = sha256.convert(bytes);
     return digest.toString();
-  }
-
-  Future<List<FileInfo>> fetchFiles() async {
-    final querySnapshot =
-        await FirebaseFirestore.instance.collection('files').get();
-    List<FileInfo> files = [];
-
-    files = querySnapshot.docs.map((doc) {
-      return FileInfo.fromFirestore(doc);
-    }).toList();
-
-    return files;
   }
 
   Future<FileInfo?> fetchFileById(String id) async {
@@ -545,9 +534,11 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
 final fileProvider =
     StateNotifierProvider<FileNotifier, PlatformFile?>((ref) => FileNotifier());
 
-final filesStreamProvider = StreamProvider<List<FileInfo>>((ref) {
+final filesStreamProvider =
+    StreamProvider.family<List<FileInfo>, String>((ref, userId) {
   return FirebaseFirestore.instance
       .collection('files')
+      .where('userId', isEqualTo: userId)
       .snapshots()
       .map((snapshot) {
     return snapshot.docs.map((doc) {

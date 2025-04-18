@@ -9,7 +9,8 @@ class GridFile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final filesAsyncValue = ref.watch(filesStreamProvider);
+    final userId = '888'; //mockup
+    final filesAsyncValue = ref.watch(filesStreamProvider(userId));
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: filesAsyncValue.when(
