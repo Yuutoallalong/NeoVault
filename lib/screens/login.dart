@@ -118,7 +118,7 @@ class LoginState extends ConsumerState<Login> {
                             footerText: "Don’t have an account? ",
                             footerLinkText: "Register Now",
                             to: "/register",
-                            ref: ref)
+                            ref: ref,)
                       ],
                     )
                   ],

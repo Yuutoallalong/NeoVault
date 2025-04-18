@@ -16,7 +16,7 @@ class UserNotifier extends StateNotifier<MyUser?> {
   UserNotifier() : super(null);
 
   final firestore = FirebaseFirestore.instance;
-  void setUser(String email) async {
+  Future<void> setUser(String email) async {
     final userSnapshot = await firestore
         .collection('users')
         .where('email', isEqualTo: email)
@@ -24,8 +24,11 @@ class UserNotifier extends StateNotifier<MyUser?> {
     final userDocs = userSnapshot.docs;
     if (userDocs.isNotEmpty) {
       final userData = userDocs[0].data();
-      MyUser currentUser = MyUser.fromJson(userData);
+      final userId = userDocs[0].id;
+      MyUser currentUser = MyUser.fromJson({...userData, 'id': userId});
       state = currentUser;
+      print("CURRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR: $currentUser");
+      print("STATEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE: $state");
     }
   }
 
@@ -38,7 +41,7 @@ class UserNotifier extends StateNotifier<MyUser?> {
         email: email,
         password: password,
       );
-      setUser(email);
+      await setUser(email);
     } on FirebaseAuthException catch (e) {
       return e.code;
     }
@@ -52,11 +55,16 @@ class UserNotifier extends StateNotifier<MyUser?> {
     required String password,
   }) async {
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      final userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      await firestore.collection('users').add({
+
+      final uid = userCredential.user?.uid;
+      if (uid == null) return 'user-creation-failed';
+
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'username': username,
         'email': email,
         'fileCount': 0,
@@ -68,7 +76,7 @@ class UserNotifier extends StateNotifier<MyUser?> {
     return 'success';
   }
 
-  Future<UserCredential> signInWithGoogle() async {
+  Future<void> signInWithGoogle() async {
     // Trigger the authentication flow
     final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
 
@@ -81,12 +89,13 @@ class UserNotifier extends StateNotifier<MyUser?> {
       accessToken: googleAuth?.accessToken,
       idToken: googleAuth?.idToken,
     );
+    var userCredential =
+        await FirebaseAuth.instance.signInWithCredential(credential);
 
-    // Once signed in, return the UserCredential
-    return await FirebaseAuth.instance.signInWithCredential(credential);
+    await saveUserToFirestore(userCredential);
   }
 
-  Future<UserCredential> signInWithFacebook() async {
+  Future<void> signInWithFacebook() async {
     // Trigger the sign-in flow
     final LoginResult loginResult = await FacebookAuth.instance.login();
 
@@ -95,15 +104,54 @@ class UserNotifier extends StateNotifier<MyUser?> {
         FacebookAuthProvider.credential(loginResult.accessToken!.tokenString);
 
     // Once signed in, return the UserCredential
-    return FirebaseAuth.instance.signInWithCredential(facebookAuthCredential);
+    var userCredential = await FirebaseAuth.instance
+        .signInWithCredential(facebookAuthCredential);
+    await saveUserToFirestore(userCredential);
   }
 
   Future<void> logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
     await GoogleSignIn().signOut();
     await FacebookAuth.instance.logOut();
+    state = null;
     if (context.mounted) {
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+    }
+  }
+
+  Future<void> saveUserToFirestore(UserCredential userCredential) async {
+    try {
+      final user = userCredential.user;
+      if (user == null) {
+        throw Exception('No user found');
+      }
+
+      final email = user.email;
+      if (email == null) {
+        throw Exception('No email found');
+      }
+
+      final userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .get();
+
+      if (userSnapshot.docs.isNotEmpty) {
+        return;
+      }
+
+      final uid = user.uid;
+
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'email': email,
+        'username': email.split('@')[0],
+        'fileCount': 0,
+        'expiredFileCount': 0,
+      });
+
+      await setUser(email);
+    } catch (e) {
+      throw Exception('Error saving user to Firestore: $e');
     }
   }
 }

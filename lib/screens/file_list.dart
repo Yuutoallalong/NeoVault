@@ -10,7 +10,7 @@ class FileList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(userProvider);
+    final user = ref.read(userProvider);
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -28,9 +28,14 @@ class FileList extends ConsumerWidget {
                 Padding(
                   padding: EdgeInsets.only(top: 70, left: 20),
                   child: Text(
-                    "Yuu",
+                    user!.username,
+
                     // user!.username, //will replace with username
-                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
                 const Spacer(),
@@ -62,7 +67,7 @@ class FileList extends ConsumerWidget {
               child: Padding(
                 padding: EdgeInsets.only(top: 20, left: 20),
                 child: Text(
-                  "8 files, 3 have expiration",
+                  "${user.fileCount} files, ${user.expiredFileCount} have expiration",
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.normal,
