@@ -1,16 +1,20 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:my_app/components/social_media_login.dart';
 import 'package:my_app/provider/user_provider.dart';
 
-Widget footerAuthen(
-    {required BuildContext context,
-    required String dividertext,
-    required String footerText,
-    required String footerLinkText,
-    required String to,
-    required var ref}) {
+final firestore = FirebaseFirestore.instance;
+Widget footerAuthen({
+  required BuildContext context,
+  required String dividertext,
+  required String footerText,
+  required String footerLinkText,
+  required String to,
+  required var ref,
+}) {
   return Column(
     children: [
       Row(
@@ -47,7 +51,7 @@ Widget footerAuthen(
                 var credentials =
                     await ref.read(userProvider.notifier).signInWithFacebook();
                 print("User logged in: $credentials");
-                Navigator.pushReplacementNamed(context, '/filelist');
+                // Navigator.pushReplacementNamed(context, '/filelist');
               } catch (e) {
                 print("Facebook login failed: $e");
               }
@@ -57,9 +61,12 @@ Widget footerAuthen(
             context: context,
             asset: "assets/icons/google.png",
             onTap: () async {
-              var credentials =
-                  await ref.read(userProvider.notifier).signInWithGoogle();
-              print("!!!!!!!!!credentials!!!!!!!!!!! $credentials");
+              try {
+                await ref.read(userProvider.notifier).signInWithGoogle();
+                Navigator.pushReplacementNamed(context, '/filelist');
+              } catch (e) {
+                print(e);
+              }
             },
           ),
           socialMediaLogin(
