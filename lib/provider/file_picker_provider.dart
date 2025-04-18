@@ -404,10 +404,6 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
           );
           return;
         }
-
-        // IMPORTANT: Use the raw password for decryption, not the hashed version
-        // This is the key change: use the raw password that was used for encryption
-        print("Decrypting with password: $password"); // Debug log
       } else {
         password = 'default_secure_password'; // Must match the upload password
       }
@@ -430,10 +426,6 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
         }
       }
 
-      // Add debug logging
-      final fileSize = await encryptedFile.length();
-      print("Downloaded encrypted file size: $fileSize bytes");
-
       // Read encrypted data
       final encryptedBytes = await encryptedFile.readAsBytes();
       if (encryptedBytes.length < 33) {
@@ -446,7 +438,6 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
       try {
         decryptedBytes = AESHelper.decryptFile(encryptedBytes, password);
       } catch (e) {
-        print('Detailed decryption error: ${e.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Decryption failed: ${e.toString()}')),
         );
@@ -472,7 +463,6 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
         } catch (_) {}
       });
     } catch (e) {
-      print('Preview error: ${e.toString()}');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Cannot preview file: ${e.toString()}')),
       );

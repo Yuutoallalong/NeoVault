@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/components/back_leading_button.dart';
@@ -32,7 +31,18 @@ class _DetailState extends ConsumerState<Detail> {
   @override
   void initState() {
     super.initState();
-    // We'll set the controllers in didChangeDependencies when data is available
+    // Explicitly fetch the data and update controllers when it completes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(currentFileProvider(widget.fileId).future).then((fileInfo) {
+        if (fileInfo != null && mounted) {
+          setState(() {
+            dayLeft = fileInfo.daysLeft;
+            switchStatus = fileInfo.locked;
+            messageController.text = fileInfo.description;
+          });
+        }
+      });
+    });
   }
 
   @override
@@ -92,32 +102,32 @@ class _DetailState extends ConsumerState<Detail> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Row(
-                          children: [
-                            Icon(Icons.file_present, size: 120),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  fileInfo.name,
-                                  style: TextStyle(
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.bold,
-                                      overflow: TextOverflow.ellipsis),
-                                  // softWrap: true,
+                        Icon(Icons.file_present, size: 120),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                fileInfo.name,
+                                style: TextStyle(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                Text(
-                                  "size: ${fileInfo.size} bytes",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Color(0xff626272)
-                                        .withAlpha((255 * 0.6).toInt()),
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: true,
+                                maxLines: 2,
+                              ),
+                              Text(
+                                "size: ${(fileInfo.size / 1024).toStringAsFixed(2)} KB",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Color(0xff626272)
+                                      .withAlpha((255 * 0.6).toInt()),
+                                  fontWeight: FontWeight.bold,
                                 ),
-                              ],
-                            ),
-                          ],
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -221,7 +231,7 @@ class _DetailState extends ConsumerState<Detail> {
     }
   }
 
-// Helper function to show password prompt
+  // Helper function to show password prompt
   Future<String?> _promptForOldPassword() async {
     final passwordController = TextEditingController();
     final completer = Completer<String?>();
