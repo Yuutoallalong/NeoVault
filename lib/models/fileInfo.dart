@@ -13,6 +13,7 @@ class FileInfo {
   final String filePassword;
   final String description;
   final double size;
+  final String userId;
 
   FileInfo(
       {required this.id,
@@ -24,7 +25,8 @@ class FileInfo {
       required this.locked,
       required this.filePassword,
       required this.description,
-      required this.size});
+      required this.size,
+      required this.userId});
 
   factory FileInfo.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -39,6 +41,7 @@ class FileInfo {
       filePassword: data['filePassword'] ?? '',
       description: data['description'] ?? '',
       size: data['size'] ?? 0.0,
+      userId: data['userId'] ?? '',
     );
   }
 
@@ -53,6 +56,7 @@ class FileInfo {
       'filePassword': filePassword,
       'description': description,
       'size': size,
+      'userId': userId
     };
   }
 }
