@@ -167,6 +167,7 @@ class _UploadState extends ConsumerState<Upload> {
 
                     ScaffoldMessenger.of(context)
                         .showSnackBar(SnackBar(content: Text('Uploaded')));
+
                     await ref.read(userProvider.notifier).setUser(userEmail);
                     Navigator.pop(context, true);
                   },

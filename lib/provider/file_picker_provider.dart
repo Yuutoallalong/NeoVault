@@ -367,6 +367,11 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
 
       // Delete from Firestore
       await FirebaseFirestore.instance.collection('files').doc(fileId).delete();
+      final userRef =
+          FirebaseFirestore.instance.collection('users').doc(userId);
+      await userRef.update({
+        'fileCount': FieldValue.increment(-1),
+      });
 
       return true;
     } catch (e) {

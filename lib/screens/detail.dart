@@ -327,6 +327,7 @@ class _DetailState extends ConsumerState<Detail> {
   // Handle delete button press
   void _handleDelete() async {
     final user = ref.watch(userProvider);
+    final userEmail = user!.email;
     final bool confirmDelete = await showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -354,7 +355,7 @@ class _DetailState extends ConsumerState<Detail> {
 
     try {
       final fileNotifier = ref.read(fileProvider.notifier);
-      final success = await fileNotifier.deleteFile(widget.fileId, user!.id);
+      final success = await fileNotifier.deleteFile(widget.fileId, user.id);
 
       if (!mounted) return;
 
@@ -362,9 +363,13 @@ class _DetailState extends ConsumerState<Detail> {
         // Invalidate the provider cache after deletion
         ref.invalidate(fileProvider);
 
+        // เพิ่มบรรทัดนี้เพื่อรีเฟรชข้อมูลผู้ใช้หลังจากลบไฟล์สำเร็จ
+        await ref.read(userProvider.notifier).setUser(userEmail);
+
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('File deleted')));
-        Navigator.of(context).pop(); // Return to previous screen
+        Navigator.of(context)
+            .pop(true); // ส่งค่า true กลับไปเพื่อบอกว่าลบสำเร็จ
       } else {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Failed to delete file')));
