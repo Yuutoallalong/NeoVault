@@ -5,6 +5,7 @@ import 'package:my_app/components/back_leading_button.dart';
 import 'package:my_app/components/file_settings.dart';
 import 'package:my_app/provider/file_picker_provider.dart';
 import 'package:my_app/models/fileInfo.dart';
+import 'package:my_app/provider/user_provider.dart';
 
 // Create a provider for the current file being viewed
 final currentFileProvider =
@@ -325,6 +326,7 @@ class _DetailState extends ConsumerState<Detail> {
 
   // Handle delete button press
   void _handleDelete() async {
+    final user = ref.watch(userProvider);
     final bool confirmDelete = await showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -352,7 +354,7 @@ class _DetailState extends ConsumerState<Detail> {
 
     try {
       final fileNotifier = ref.read(fileProvider.notifier);
-      final success = await fileNotifier.deleteFile(widget.fileId);
+      final success = await fileNotifier.deleteFile(widget.fileId, user!.id);
 
       if (!mounted) return;
 

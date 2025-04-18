@@ -54,7 +54,7 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
           print(
               'Attempting to delete expired file: ${fileInfo.name}, ID: ${fileInfo.id}, expired on: ${fileInfo.expiredIn}');
 
-          bool success = await deleteFile(fileInfo.id);
+          bool success = await deleteFile(fileInfo.id, fileInfo.userId);
           print(
               'Delete result for ${fileInfo.id}: ${success ? "Success" : "Failed"}');
         } catch (e) {
@@ -149,6 +149,12 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
           userId: userId);
 
       await saveFileToFirestore(fileInfo);
+
+      final userRef =
+          FirebaseFirestore.instance.collection('users').doc(userId);
+      await userRef.update({
+        'fileCount': FieldValue.increment(1),
+      });
 
       await encryptedFile.delete();
       state = null;
@@ -339,7 +345,7 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
     }
   }
 
-  Future<bool> deleteFile(String fileId) async {
+  Future<bool> deleteFile(String fileId, String userId) async {
     try {
       // First fetch the file to get the storage URL
       FileInfo? file = await fetchFileById(fileId);

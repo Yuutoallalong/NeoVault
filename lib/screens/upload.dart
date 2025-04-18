@@ -154,16 +154,21 @@ class _UploadState extends ConsumerState<Upload> {
                           SnackBar(content: Text('No file selected')));
                       return;
                     }
+
+                    final userEmail = user!.email;
+
                     await ref.read(fileProvider.notifier).uploadFile(
                         pickedFile,
                         messageController.text,
                         passwordController.text,
                         switchStatus,
                         dayLeft,
-                        user!.id);
+                        user.id);
+
                     ScaffoldMessenger.of(context)
                         .showSnackBar(SnackBar(content: Text('Uploaded')));
-                    Navigator.pop(context);
+                    await ref.read(userProvider.notifier).setUser(userEmail);
+                    Navigator.pop(context, true);
                   },
                   child: Text('Upload'),
                 ),

@@ -3,18 +3,26 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:my_app/components/grid_file.dart';
 import 'package:my_app/provider/user_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:my_app/provider/file_picker_provider.dart';
 
 class FileList extends ConsumerWidget {
   const FileList({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.read(userProvider);
+    final user = ref.watch(userProvider);
+    if (user == null) {
+      return Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/upload');
+        onPressed: () async {
+          final result = await Navigator.pushNamed(context, '/upload');
+          if (result == true) {
+            final currentEmail = user.email;
+            await ref.read(userProvider.notifier).setUser(currentEmail);
+          }
         },
         backgroundColor: Colors.black,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
@@ -28,9 +36,7 @@ class FileList extends ConsumerWidget {
                 Padding(
                   padding: EdgeInsets.only(top: 70, left: 20),
                   child: Text(
-                    user!.username,
-
-                    // user!.username, //will replace with username
+                    user.username,
                     style: TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.bold,
