@@ -48,10 +48,9 @@ Widget footerAuthen({
             asset: "assets/icons/facebook.png",
             onTap: () async {
               try {
-                var credentials =
-                    await ref.read(userProvider.notifier).signInWithFacebook();
-                print("User logged in: $credentials");
-                // Navigator.pushReplacementNamed(context, '/filelist');
+                await ref.read(userProvider.notifier).signInWithFacebook();
+
+                Navigator.pushReplacementNamed(context, '/filelist');
               } catch (e) {
                 print("Facebook login failed: $e");
               }

@@ -16,7 +16,7 @@ class UserNotifier extends StateNotifier<MyUser?> {
   UserNotifier() : super(null);
 
   final firestore = FirebaseFirestore.instance;
-  void setUser(String email) async {
+  Future<void> setUser(String email) async {
     final userSnapshot = await firestore
         .collection('users')
         .where('email', isEqualTo: email)
@@ -27,6 +27,8 @@ class UserNotifier extends StateNotifier<MyUser?> {
       final userId = userDocs[0].id;
       MyUser currentUser = MyUser.fromJson({...userData, 'id': userId});
       state = currentUser;
+      print("CURRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR: $currentUser");
+      print("STATEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE: $state");
     }
   }
 
@@ -39,7 +41,7 @@ class UserNotifier extends StateNotifier<MyUser?> {
         email: email,
         password: password,
       );
-      setUser(email);
+      await setUser(email);
     } on FirebaseAuthException catch (e) {
       return e.code;
     }
@@ -93,7 +95,7 @@ class UserNotifier extends StateNotifier<MyUser?> {
     await saveUserToFirestore(userCredential);
   }
 
-  Future<UserCredential> signInWithFacebook() async {
+  Future<void> signInWithFacebook() async {
     // Trigger the sign-in flow
     final LoginResult loginResult = await FacebookAuth.instance.login();
 
@@ -102,7 +104,9 @@ class UserNotifier extends StateNotifier<MyUser?> {
         FacebookAuthProvider.credential(loginResult.accessToken!.tokenString);
 
     // Once signed in, return the UserCredential
-    return FirebaseAuth.instance.signInWithCredential(facebookAuthCredential);
+    var userCredential = await FirebaseAuth.instance
+        .signInWithCredential(facebookAuthCredential);
+    await saveUserToFirestore(userCredential);
   }
 
   Future<void> logout(BuildContext context) async {
@@ -145,7 +149,7 @@ class UserNotifier extends StateNotifier<MyUser?> {
         'expiredFileCount': 0,
       });
 
-      setUser(email);
+      await setUser(email);
     } catch (e) {
       throw Exception('Error saving user to Firestore: $e');
     }
