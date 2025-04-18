@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'package:my_app/provider/AESHelper.dart';
 
 class FileNotifier extends StateNotifier<PlatformFile?> {
   FileNotifier() : super(null) {
@@ -102,37 +104,57 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
   }
 
   Future<void> uploadFile(PlatformFile pickedFile, String description,
-      String filePassword, bool locked, int daysLeft) async {
+      String filePassword, bool locked, int daysLeft, String userId) async {
     if (pickedFile == null) {
       return;
     }
 
-    final path = 'files/${pickedFile.name}';
-    final file = File(pickedFile.path!);
+    try {
+      final originalFile = File(pickedFile.path!);
+      final fileBytes = await originalFile.readAsBytes();
 
-    final ref = FirebaseStorage.instance.ref().child(path);
+      final encryptionPassword =
+          filePassword.isNotEmpty ? filePassword : 'default_secure_password';
 
-    await ref.putFile(file);
+      print("Encrypting with password: $encryptionPassword"); // Debug log
 
-    final downloadUrl = await ref.getDownloadURL();
+      // Encrypt the file
+      final encryptedBytes =
+          AESHelper.encryptFile(fileBytes, encryptionPassword);
 
-    final fileRef = FirebaseFirestore.instance.collection('files').doc();
-    final fileInfo = FileInfo(
-      id: fileRef.id,
-      name: pickedFile.name,
-      url: downloadUrl,
-      createAt: DateTime.now(),
-      daysLeft: daysLeft,
-      expiredIn: DateTime.now().add(Duration(days: daysLeft)),
-      locked: locked,
-      filePassword: hashPassword(filePassword),
-      description: description,
-      size: pickedFile.size.toDouble(),
-    );
+      // Create a temporary encrypted file
+      final tempDir = await getTemporaryDirectory();
+      final encryptedPath = '${tempDir.path}/${pickedFile.name}.enc';
+      final encryptedFile = File(encryptedPath);
+      await encryptedFile.writeAsBytes(encryptedBytes);
 
-    await saveFileToFirestore(fileInfo);
+      final path = 'files/${pickedFile.name}';
+      final ref = FirebaseStorage.instance.ref().child(path);
 
-    state = null;
+      await ref.putFile(encryptedFile);
+      final downloadUrl = await ref.getDownloadURL();
+
+      final fileRef = FirebaseFirestore.instance.collection('files').doc();
+      final fileInfo = FileInfo(
+          id: fileRef.id,
+          name: pickedFile.name,
+          url: downloadUrl,
+          createAt: DateTime.now(),
+          daysLeft: daysLeft,
+          expiredIn: DateTime.now().add(Duration(days: daysLeft)),
+          locked: locked,
+          filePassword: hashPassword(filePassword),
+          description: description,
+          size: pickedFile.size.toDouble(),
+          userId: userId);
+
+      await saveFileToFirestore(fileInfo);
+
+      await encryptedFile.delete();
+      state = null;
+    } catch (e) {
+      print('Error uploading file: $e');
+    }
   }
 
   Future<void> saveFileToFirestore(FileInfo fileInfo) async {
@@ -154,18 +176,6 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
     return digest.toString();
   }
 
-  Future<List<FileInfo>> fetchFiles() async {
-    final querySnapshot =
-        await FirebaseFirestore.instance.collection('files').get();
-    List<FileInfo> files = [];
-
-    files = querySnapshot.docs.map((doc) {
-      return FileInfo.fromFirestore(doc);
-    }).toList();
-
-    return files;
-  }
-
   Future<FileInfo?> fetchFileById(String id) async {
     final doc =
         await FirebaseFirestore.instance.collection('files').doc(id).get();
@@ -183,48 +193,141 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
     int? daysLeft,
     bool? locked,
     String? password,
+    String? oldPassword,
   }) async {
+    // Add detailed logging for debugging
+
     try {
-      // First fetch the current file data
+      // 1. Fetch current file info
       FileInfo? currentFile = await fetchFileById(fileId);
       if (currentFile == null) {
         return false;
       }
 
-      // Calculate new expiration date if daysLeft changed
+      // 2. Handle expiration update
       DateTime expiredIn = currentFile.expiredIn;
       if (daysLeft != null && daysLeft != currentFile.daysLeft) {
         expiredIn = DateTime.now().add(Duration(days: daysLeft));
       }
 
-      // Hash password if provided
-      String filePassword = currentFile.filePassword;
-      if (locked == true && password != null && password.isNotEmpty) {
-        filePassword = hashPassword(password);
-      }
-
-      // Build update data
       final Map<String, dynamic> updateData = {
         'daysLeft': daysLeft ?? currentFile.daysLeft,
         'expiredIn': expiredIn,
       };
 
-      // Only update optional fields if they are provided
       if (description != null) {
         updateData['description'] = description;
       }
 
+      // 3. Initialize encryption logic
+      bool needsReEncryption = false;
+      String newEncryptionPassword = 'default_secure_password';
+      String currentEncryptionPassword = 'default_secure_password';
+      String updatedHashedPassword = currentFile.filePassword;
+
+      // 4. Handle password status change
       if (locked != null) {
         updateData['locked'] = locked;
-        // If locked status is false, clear password
-        if (!locked) {
+
+        // Case 1: Currently locked, turning off password protection
+        if (currentFile.locked && locked == false) {
+          // Verify old password before removing
+          if (oldPassword == null || oldPassword.isEmpty) {
+            return false;
+          }
+
+          String hashedOld = hashPassword(oldPassword);
+          if (hashedOld != currentFile.filePassword) {
+            return false;
+          }
+
+          // Password verified, now remove it
           updateData['filePassword'] = '';
-        } else if (password != null && password.isNotEmpty) {
-          updateData['filePassword'] = filePassword;
+          currentEncryptionPassword =
+              oldPassword; // Use old password to decrypt
+          newEncryptionPassword =
+              'default_secure_password'; // Use default for new encryption
+          needsReEncryption = true;
+        }
+        // Case 2: Adding password protection (was unlocked, now locking)
+        else if (!currentFile.locked && locked == true) {
+          // Setting a new password when previously unlocked
+          if (password == null || password.isEmpty) {
+            return false;
+          }
+
+          updatedHashedPassword = hashPassword(password);
+          updateData['filePassword'] = updatedHashedPassword;
+          currentEncryptionPassword =
+              'default_secure_password'; // Default for decryption
+          newEncryptionPassword = password; // New password for encryption
+          needsReEncryption = true;
+        }
+        // Case 3: Changing existing password (locked and staying locked)
+        else if (currentFile.locked &&
+            locked == true &&
+            password != null &&
+            password.isNotEmpty) {
+          // Verify old password before changing
+          if (oldPassword == null || oldPassword.isEmpty) {
+            return false;
+          }
+
+          String hashedOld = hashPassword(oldPassword);
+          if (hashedOld != currentFile.filePassword) {
+            return false;
+          }
+
+          // Old password verified, update to new password
+          updatedHashedPassword = hashPassword(password);
+          updateData['filePassword'] = updatedHashedPassword;
+          currentEncryptionPassword =
+              oldPassword; // Use old password to decrypt
+          newEncryptionPassword = password; // Use new password for encryption
+          needsReEncryption = true;
         }
       }
 
-      // Update document in Firestore
+      // 5. Re-encrypt the file if needed
+      if (needsReEncryption) {
+        try {
+          final tempDir = await getTemporaryDirectory();
+          final encryptedPath = '${tempDir.path}/${currentFile.name}.enc';
+          final encryptedFile = File(encryptedPath);
+
+          await FirebaseStorage.instance
+              .refFromURL(currentFile.url)
+              .writeToFile(encryptedFile);
+
+          final encryptedBytes = await encryptedFile.readAsBytes();
+
+          final decryptedBytes = AESHelper.decryptFile(
+            encryptedBytes,
+            currentEncryptionPassword,
+          );
+
+          final reEncryptedBytes =
+              AESHelper.encryptFile(decryptedBytes, newEncryptionPassword);
+
+          await encryptedFile.writeAsBytes(reEncryptedBytes);
+
+          final storageRef =
+              FirebaseStorage.instance.refFromURL(currentFile.url);
+          final uploadTask = storageRef.putFile(encryptedFile);
+          await uploadTask;
+
+          if (uploadTask.snapshot.state != TaskState.success) {
+            return false;
+          }
+
+          await encryptedFile.delete();
+        } catch (e) {
+          return false;
+        }
+      }
+
+      // 6. Update Firestore
+
       await FirebaseFirestore.instance
           .collection('files')
           .doc(fileId)
@@ -232,7 +335,6 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
 
       return true;
     } catch (e) {
-      print('Error updating file: $e');
       return false;
     }
   }
@@ -269,49 +371,86 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
 
   Future<void> previewFile(BuildContext context, FileInfo fileInfo) async {
     try {
-      // Only check for password if the file is locked AND has a password
-      if (fileInfo.locked && fileInfo.filePassword.isNotEmpty) {
-        // Show password dialog
-        String? enteredPassword = await _showPasswordDialog(context);
+      String? password;
 
-        // If user cancels the dialog or enters no password
-        if (enteredPassword == null || enteredPassword.isEmpty) {
+      // Get password if needed
+      if (fileInfo.locked && fileInfo.filePassword.isNotEmpty) {
+        password = await _showPasswordDialog(context);
+
+        if (password == null || password.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Password required to preview this file')),
           );
           return;
         }
 
-        // Verify password
-        String hashedEnteredPassword = hashPassword(enteredPassword);
+        // Verify password - compare HASHED passwords
+        String hashedEnteredPassword = hashPassword(password);
         if (hashedEnteredPassword != fileInfo.filePassword) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Incorrect password')),
           );
           return;
         }
-        // Password verified, continue with file preview
+      } else {
+        password = 'default_secure_password'; // Must match the upload password
       }
 
-      // File preview code - runs for all files (password-protected or not)
+      // Download the encrypted file
       final tempDir = await getTemporaryDirectory();
-      final filePath = '${tempDir.path}/${fileInfo.name}';
-      final file = File(filePath);
+      final encryptedPath = '${tempDir.path}/${fileInfo.name}.enc';
+      final encryptedFile = File(encryptedPath);
 
-      if (!await file.exists()) {
-        // Download from Firebase Storage
-        await FirebaseStorage.instance
+      if (!await encryptedFile.exists()) {
+        final task = FirebaseStorage.instance
             .refFromURL(fileInfo.url)
-            .writeToFile(file);
+            .writeToFile(encryptedFile);
+
+        await task.whenComplete(() {});
+
+        // Verify download completed successfully
+        if (task.snapshot.state != TaskState.success) {
+          throw Exception('Download failed');
+        }
       }
 
-      // Open with native viewer
-      final result = await OpenFile.open(filePath);
+      // Read encrypted data
+      final encryptedBytes = await encryptedFile.readAsBytes();
+      if (encryptedBytes.length < 33) {
+        // Salt (16) + IV (16) + at least some data
+        throw Exception('Invalid encrypted file: file too small');
+      }
+
+      // Decrypt the file with the RAW password, not hashed
+      Uint8List decryptedBytes;
+      try {
+        decryptedBytes = AESHelper.decryptFile(encryptedBytes, password);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Decryption failed: ${e.toString()}')),
+        );
+        return;
+      }
+
+      // Save the decrypted file to a temporary location
+      final decryptedPath = '${tempDir.path}/decrypted_${fileInfo.name}';
+      final decryptedFile = File(decryptedPath);
+      await decryptedFile.writeAsBytes(decryptedBytes);
+
+      // Open the decrypted file with the native viewer
+      final result = await OpenFile.open(decryptedPath);
       if (result.type != ResultType.done) {
         throw Exception(result.message);
       }
+
+      // Optional: Clean up temporary files after a delay
+      Future.delayed(Duration(minutes: 5), () {
+        try {
+          encryptedFile.delete();
+          decryptedFile.delete();
+        } catch (_) {}
+      });
     } catch (e) {
-      // Show error in a snackbar
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Cannot preview file: ${e.toString()}')),
       );
@@ -394,9 +533,11 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
 final fileProvider =
     StateNotifierProvider<FileNotifier, PlatformFile?>((ref) => FileNotifier());
 
-final filesStreamProvider = StreamProvider<List<FileInfo>>((ref) {
+final filesStreamProvider =
+    StreamProvider.family<List<FileInfo>, String>((ref, userId) {
   return FirebaseFirestore.instance
       .collection('files')
+      .where('userId', isEqualTo: userId)
       .snapshots()
       .map((snapshot) {
     return snapshot.docs.map((doc) {

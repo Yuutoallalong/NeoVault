@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/components/back_leading_button.dart';
 import 'package:my_app/components/file_settings.dart';
 import 'package:my_app/provider/file_picker_provider.dart';
+import 'package:my_app/provider/user_provider.dart';
 
 class Upload extends ConsumerStatefulWidget {
   const Upload({super.key});
@@ -20,6 +21,7 @@ class _UploadState extends ConsumerState<Upload> {
   int dayLeft = 7;
   @override
   Widget build(BuildContext context) {
+    final user = ref.read(userProvider);
     return Scaffold(
       appBar: AppBar(
         leading: backLeadingButton(context: context),
@@ -157,7 +159,8 @@ class _UploadState extends ConsumerState<Upload> {
                         messageController.text,
                         passwordController.text,
                         switchStatus,
-                        dayLeft);
+                        dayLeft,
+                        user!.id);
                     ScaffoldMessenger.of(context)
                         .showSnackBar(SnackBar(content: Text('Uploaded')));
                     Navigator.pop(context);

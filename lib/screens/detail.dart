@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/components/back_leading_button.dart';
@@ -6,7 +7,8 @@ import 'package:my_app/provider/file_picker_provider.dart';
 import 'package:my_app/models/fileInfo.dart';
 
 // Create a provider for the current file being viewed
-final currentFileProvider = FutureProvider.family<FileInfo?, String>((ref, fileId) {
+final currentFileProvider =
+    FutureProvider.family<FileInfo?, String>((ref, fileId) {
   return ref.read(fileProvider.notifier).fetchFileById(fileId);
 });
 
@@ -25,11 +27,22 @@ class _DetailState extends ConsumerState<Detail> {
   bool switchStatus = false;
   int dayLeft = 7;
   bool isLoading = false;
-  
+
   @override
   void initState() {
     super.initState();
-    // We'll set the controllers in didChangeDependencies when data is available
+    // Explicitly fetch the data and update controllers when it completes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(currentFileProvider(widget.fileId).future).then((fileInfo) {
+        if (fileInfo != null && mounted) {
+          setState(() {
+            dayLeft = fileInfo.daysLeft;
+            switchStatus = fileInfo.locked;
+            messageController.text = fileInfo.description;
+          });
+        }
+      });
+    });
   }
 
   @override
@@ -37,17 +50,17 @@ class _DetailState extends ConsumerState<Detail> {
     super.didChangeDependencies();
     _updateControllersFromFileData();
   }
-  
+
   // Update controllers when file data is available
   void _updateControllersFromFileData() {
     final fileAsync = ref.watch(currentFileProvider(widget.fileId));
-    
+
     fileAsync.whenData((fileInfo) {
       if (fileInfo != null && mounted) {
         setState(() {
           dayLeft = fileInfo.daysLeft;
           switchStatus = fileInfo.locked;
-          
+
           // Only set the controller text if it's empty or different
           if (messageController.text != fileInfo.description) {
             messageController.text = fileInfo.description;
@@ -61,7 +74,7 @@ class _DetailState extends ConsumerState<Detail> {
   Widget build(BuildContext context) {
     // Watch the file data
     final fileAsync = ref.watch(currentFileProvider(widget.fileId));
-    
+
     return Scaffold(
       appBar: AppBar(
         leading: backLeadingButton(context: context),
@@ -78,7 +91,7 @@ class _DetailState extends ConsumerState<Detail> {
           if (fileInfo == null) {
             return const Center(child: Text('File not found'));
           }
-          
+
           return Stack(
             children: [
               Padding(
@@ -89,34 +102,32 @@ class _DetailState extends ConsumerState<Detail> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Row(
-                          children: [
-                            Icon(Icons.file_present, size: 120),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  fileInfo.name,
-                                  style: TextStyle(
-                                    fontSize: 36,
-                                    fontWeight: FontWeight.bold,
-                                    overflow: TextOverflow.ellipsis
-                                  ),
-                                  // softWrap: true,
-                                  
+                        Icon(Icons.file_present, size: 120),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                fileInfo.name,
+                                style: TextStyle(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                Text(
-                                  "size: ${fileInfo.size} bytes",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Color(0xff626272)
-                                        .withAlpha((255 * 0.6).toInt()),
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: true,
+                                maxLines: 2,
+                              ),
+                              Text(
+                                "size: ${(fileInfo.size / 1024).toStringAsFixed(2)} KB",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Color(0xff626272)
+                                      .withAlpha((255 * 0.6).toInt()),
+                                  fontWeight: FontWeight.bold,
                                 ),
-                              ],
-                            ),
-                          ],
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -147,7 +158,8 @@ class _DetailState extends ConsumerState<Detail> {
                     // Delete button
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xffff2c21).withAlpha((255 * 0.72).toInt()),
+                        backgroundColor:
+                            Color(0xffff2c21).withAlpha((255 * 0.72).toInt()),
                       ),
                       onPressed: isLoading ? null : _handleDelete,
                       child: Text('Delete'),
@@ -172,18 +184,107 @@ class _DetailState extends ConsumerState<Detail> {
       ),
     );
   }
-  
+
   // Handle save button press
   void _handleSave() async {
     // Validate form if needed
-    if (switchStatus && formKey.currentState != null && !formKey.currentState!.validate()) {
+    if (switchStatus &&
+        formKey.currentState != null &&
+        !formKey.currentState!.validate()) {
       return;
     }
-    
+
+    // Get current file info to check if it's currently locked
+    final fileAsync = ref.watch(currentFileProvider(widget.fileId));
+    final currentFile = await fileAsync.value;
+
+    // Check if we need to collect old password (turning off password protection)
+    if (currentFile != null && currentFile.locked && !switchStatus) {
+      // We're turning off password protection, need to prompt for old password
+      final oldPassword = await _promptForOldPassword();
+      if (oldPassword == null || oldPassword.isEmpty) {
+        // User cancelled password entry or didn't provide one
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Password required to remove protection')));
+        return;
+      }
+
+      // Call save with the old password
+      _saveWithPassword(oldPassword: oldPassword);
+    } else if (currentFile != null &&
+        currentFile.locked &&
+        switchStatus &&
+        passwordController.text.isNotEmpty) {
+      // Changing existing password - need old password
+      final oldPassword = await _promptForOldPassword();
+      if (oldPassword == null || oldPassword.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Current password required to change password')));
+        return;
+      }
+
+      // Call save with both passwords
+      _saveWithPassword(oldPassword: oldPassword);
+    } else {
+      // Regular save without needing old password
+      _saveWithPassword();
+    }
+  }
+
+  // Helper function to show password prompt
+  Future<String?> _promptForOldPassword() async {
+    final passwordController = TextEditingController();
+    final completer = Completer<String?>();
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text('Password Required'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Enter current password'),
+            SizedBox(height: 16),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Current Password',
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              completer.complete(null); // Cancelled
+            },
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              completer.complete(passwordController.text);
+            },
+            child: Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+
+    return completer.future;
+  }
+
+// Function that actually saves with the right parameters
+  void _saveWithPassword({String? oldPassword}) async {
     setState(() {
       isLoading = true;
     });
-    
+
     try {
       final fileNotifier = ref.read(fileProvider.notifier);
       final success = await fileNotifier.updateFileSettings(
@@ -191,28 +292,28 @@ class _DetailState extends ConsumerState<Detail> {
         description: messageController.text,
         daysLeft: dayLeft,
         locked: switchStatus,
-        password: switchStatus && passwordController.text.isNotEmpty ? passwordController.text : null,
+        password: switchStatus && passwordController.text.isNotEmpty
+            ? passwordController.text
+            : null,
+        oldPassword: oldPassword, // Pass the old password when provided
       );
-      
+
       if (!mounted) return;
-      
+
       if (success) {
         // Refresh the file data after successful update
         ref.refresh(currentFileProvider(widget.fileId));
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Saved'))
-        );
+
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Saved')));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save'))
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Failed to save. Check password and try again.')));
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error occurred'))
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error occurred')));
     } finally {
       if (mounted) {
         setState(() {
@@ -221,57 +322,55 @@ class _DetailState extends ConsumerState<Detail> {
       }
     }
   }
-  
+
   // Handle delete button press
   void _handleDelete() async {
     final bool confirmDelete = await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Delete File'),
-        content: Text('Are you sure you want to delete this file?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text('Cancel'),
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Delete File'),
+            content: Text('Are you sure you want to delete this file?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text('Delete', style: TextStyle(color: Colors.red)),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true), 
-            child: Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    ) ?? false;
-    
+        ) ??
+        false;
+
     if (!confirmDelete) return;
-    
+
     setState(() {
       isLoading = true;
     });
-    
+
     try {
       final fileNotifier = ref.read(fileProvider.notifier);
       final success = await fileNotifier.deleteFile(widget.fileId);
-      
+
       if (!mounted) return;
-      
+
       if (success) {
         // Invalidate the provider cache after deletion
         ref.invalidate(fileProvider);
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('File deleted'))
-        );
+
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('File deleted')));
         Navigator.of(context).pop(); // Return to previous screen
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete file'))
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Failed to delete file')));
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error occurred'))
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error occurred')));
     } finally {
       if (mounted) {
         setState(() {
@@ -280,7 +379,7 @@ class _DetailState extends ConsumerState<Detail> {
       }
     }
   }
-  
+
   @override
   void dispose() {
     messageController.dispose();

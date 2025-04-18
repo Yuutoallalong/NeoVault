@@ -3,13 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:my_app/provider/file_picker_provider.dart';
 import 'package:my_app/models/fileInfo.dart';
+import 'package:my_app/provider/user_provider.dart';
 
 class GridFile extends ConsumerWidget {
   const GridFile({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final filesAsyncValue = ref.watch(filesStreamProvider);
+    final user = ref.read(userProvider);
+    final userId = user!.id;
+    final filesAsyncValue = ref.watch(filesStreamProvider(userId));
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: filesAsyncValue.when(
@@ -69,7 +72,7 @@ class GridFile extends ConsumerWidget {
                       ),
                       Padding(
                         padding:
-                            EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         child: Text(
                           file.name,
                           style: TextStyle(

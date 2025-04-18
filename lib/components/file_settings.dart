@@ -125,12 +125,12 @@ Widget fileSettings(
                     contentPadding: const EdgeInsets.symmetric(
                         vertical: 14, horizontal: 16)),
                 style: TextStyle(color: Colors.white),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Password cannot be empty';
-                  }
-                  return null;
-                },
+                // validator: (value) {
+                //   if (value == null || value.isEmpty) {
+                //     return 'Password cannot be empty';
+                //   }
+                //   return null;
+                // },
               ))
           : const SizedBox(
               height: 0,
