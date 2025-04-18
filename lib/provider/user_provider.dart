@@ -137,6 +137,7 @@ class UserNotifier extends StateNotifier<MyUser?> {
           .get();
 
       if (userSnapshot.docs.isNotEmpty) {
+        await setUser(email);
         return;
       }
 
