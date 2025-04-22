@@ -24,7 +24,7 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
   // Add this method to start periodic cleanup
   void _startExpirationCleanupTimer() {
     // Check once every hour
-    _cleanupTimer = Timer.periodic(Duration(hours: 1), (timer) async {
+    _cleanupTimer = Timer.periodic(Duration(seconds: 1), (timer) async {
       await cleanupExpiredFiles();
     });
 
@@ -55,6 +55,19 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
               'Attempting to delete expired file: ${fileInfo.name}, ID: ${fileInfo.id}, expired on: ${fileInfo.expiredIn}');
 
           bool success = await deleteFile(fileInfo.id, fileInfo.userId);
+
+          // Increment the expiredFileCount if the file was successfully deleted
+          if (success) {
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(fileInfo
+                    .userId) // userId in fileInfo is the same as id in user model
+                .update({
+              'expiredFileCount': FieldValue.increment(1),
+            });
+            print('Incremented expired file count for user ${fileInfo.userId}');
+          }
+
           print(
               'Delete result for ${fileInfo.id}: ${success ? "Success" : "Failed"}');
         } catch (e) {
@@ -539,6 +552,32 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
       );
     }
   }
+
+  // Future<void> updateExpiredFileCount(String userId) async {
+  //   try {
+  //     // Get current time
+  //     final now = DateTime.now();
+
+  //     // Count expired files for this user
+  //     final querySnapshot = await FirebaseFirestore.instance
+  //         .collection('files')
+  //         .where('userId', isEqualTo: userId)
+  //         .where('expiredIn', isLessThan: now)
+  //         .get();
+
+  //     final expiredCount = querySnapshot.docs.length;
+
+  //     // Update user document with expired file count
+  //     await FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(userId)
+  //         .update({'expiredFileCount': expiredCount});
+  //   } catch (e) {
+  //     print('Error updating expired file count: $e');
+  //   }
+  // }
+
+  // Add this method to the FileNotifier class
 }
 
 final fileProvider =

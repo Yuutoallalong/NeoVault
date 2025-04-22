@@ -52,28 +52,44 @@ Widget fileSettings(
               ),
               Row(
                 children: [
-                  DropdownButton<int>(
-                    value: dayLeft,
-                    items: [7, 14, 30, 60, 90].map((int value) {
-                      return DropdownMenuItem<int>(
-                        value: value,
-                        child: Text(
-                          "$value day(s)",
-                          style: TextStyle(
-                            color: Color(0xff626272),
-                            fontSize: 16,
-                          ),
-                        ),
+                  TextButton.icon(
+                    onPressed: () async {
+                      // Show date picker
+                      final DateTime? pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate:
+                            DateTime.now().add(Duration(days: dayLeft)),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(Duration(days: 365)),
                       );
-                    }).toList(),
-                    onChanged: (int? newValue) {
-                      if (newValue != null) {
-                        daysLeftOnChanged(newValue);
+
+                      if (pickedDate != null) {
+                        // Calculate days difference between now and picked date
+                        final difference =
+                            pickedDate.difference(DateTime.now()).inDays;
+
+                        // Update days left with the picked date difference
+                        daysLeftOnChanged(
+                            difference + 1); // +1 to include the current day
+
+                        // Update expiredIn in FileInfo
+                        // Assuming you have a reference to the FileInfo instance
+                        // this.expiredIn = pickedDate.millisecondsSinceEpoch;
                       }
                     },
-                    icon: Icon(Icons.edit, color: Color(0xff626272)),
-                    underline: SizedBox(),
-                  )
+                    icon: Icon(Icons.calendar_today, color: Color(0xff626272)),
+                    label: Text(
+                      "${dayLeft} day(s)",
+                      style: TextStyle(
+                        color: Color(0xff626272),
+                        fontSize: 16,
+                      ),
+                    ),
+                    style: ButtonStyle(
+                      overlayColor:
+                          MaterialStateProperty.all(Colors.transparent),
+                    ),
+                  ),
                 ],
               ),
             ],
