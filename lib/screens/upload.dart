@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/components/back_leading_button.dart';
@@ -151,22 +153,62 @@ class _UploadState extends ConsumerState<Upload> {
                     final pickedFile = ref.watch(fileProvider);
                     if (pickedFile == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('No file selected')));
+                        SnackBar(content: Text('No file selected')),
+                      );
+                      return;
+                    }
+
+                    final file = File(pickedFile.path!);
+                    final fileSize = await file.length();
+                    const maxSizeInBytes = 500 * 1024 * 1024;
+
+                    if (fileSize > maxSizeInBytes) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('File too large (limit is 500MB)')),
+                      );
+                      return;
+                    }
+
+                    final unsafeExtensions = [
+                      '.exe',
+                      '.sh',
+                      '.bat',
+                      '.js',
+                      '.jar',
+                      '.py',
+                      '.php',
+                      '.pl',
+                      '.rb',
+                      '.dll',
+                      '.msi',
+                    ];
+
+                    final fileName = pickedFile.name.toLowerCase();
+                    final isDangerous =
+                        unsafeExtensions.any((ext) => fileName.endsWith(ext));
+
+                    if (isDangerous) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('File type not allowed')),
+                      );
                       return;
                     }
 
                     final userEmail = user!.email;
 
                     await ref.read(fileProvider.notifier).uploadFile(
-                        pickedFile,
-                        messageController.text,
-                        passwordController.text,
-                        switchStatus,
-                        dayLeft,
-                        user.id);
+                          pickedFile,
+                          messageController.text,
+                          passwordController.text,
+                          switchStatus,
+                          dayLeft,
+                          user.id,
+                        );
 
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(SnackBar(content: Text('Uploaded')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Uploaded')),
+                    );
 
                     await ref.read(userProvider.notifier).setUser(userEmail);
                     Navigator.pop(context, true);
