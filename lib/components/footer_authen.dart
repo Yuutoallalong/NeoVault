@@ -40,7 +40,7 @@ Widget footerAuthen({
         height: 20,
       ),
       Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           socialMediaLogin(
             context: context,
@@ -67,10 +67,10 @@ Widget footerAuthen({
               }
             },
           ),
-          socialMediaLogin(
-              context: context,
-              asset: "assets/icons/microsoft.png",
-              onTap: () {}),
+          // socialMediaLogin(
+          //     context: context,
+          //     asset: "assets/icons/microsoft.png",
+          //     onTap: () {}),
         ],
       ),
       const SizedBox(
