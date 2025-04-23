@@ -75,12 +75,17 @@ class _DetailState extends ConsumerState<Detail> {
   Widget build(BuildContext context) {
     // Watch the file data
     final fileAsync = ref.watch(currentFileProvider(widget.fileId));
-
+    final user = ref.watch(userProvider);
+    if (user == null) {
+      return Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         leading: backLeadingButton(context: context),
         title: Text(
-          "Neovault",
+          user.username,
           style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,

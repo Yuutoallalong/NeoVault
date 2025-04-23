@@ -27,8 +27,7 @@ class UserNotifier extends StateNotifier<MyUser?> {
       final userId = userDocs[0].id;
       MyUser currentUser = MyUser.fromJson({...userData, 'id': userId});
       state = currentUser;
-      print("CURRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR: $currentUser");
-      print("STATEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE: $state");
+
     }
   }
 

@@ -17,7 +17,14 @@ class GridFile extends ConsumerWidget {
       child: filesAsyncValue.when(
         data: (files) {
           if (files.isEmpty) {
-            return const Center(child: Text('No files found.'));
+            return Column(
+              children: [
+                const SizedBox(
+                  height: 40,
+                ),
+                Text('No files found.'),
+              ],
+            );
           }
           return GridView.builder(
             itemCount: files.length,
