@@ -7,6 +7,7 @@ import 'package:my_app/components/footer_authen.dart';
 import 'package:my_app/components/input.dart';
 import 'package:my_app/components/show_snackbar.dart';
 import 'package:my_app/provider/user_provider.dart';
+import 'package:my_app/screens/forgot_pw.dart';
 
 class Login extends ConsumerStatefulWidget {
   const Login({super.key});
@@ -74,7 +75,14 @@ class LoginState extends ConsumerState<Login> {
                                             style: GoogleFonts.urbanist(
                                                 color: Colors.black),
                                             recognizer: TapGestureRecognizer()
-                                              ..onTap = () => () {}))
+                                              ..onTap = () {
+                                                Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          ForgotPw(),
+                                                    ));
+                                              }))
                                   ],
                                 ),
                                 const SizedBox(
@@ -113,12 +121,13 @@ class LoginState extends ConsumerState<Login> {
                           height: 60,
                         ),
                         footerAuthen(
-                            context: context,
-                            dividertext: "Or Login With",
-                            footerText: "Don’t have an account? ",
-                            footerLinkText: "Register Now",
-                            to: "/register",
-                            ref: ref,)
+                          context: context,
+                          dividertext: "Or Login With",
+                          footerText: "Don’t have an account? ",
+                          footerLinkText: "Register Now",
+                          to: "/register",
+                          ref: ref,
+                        )
                       ],
                     )
                   ],
