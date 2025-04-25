@@ -160,7 +160,7 @@ class _UploadState extends ConsumerState<Upload> {
 
                     final file = File(pickedFile.path!);
                     final fileSize = await file.length();
-                    const maxSizeInBytes = 500 * 1024 * 1024;
+                    const maxSizeInBytes = 500 * 1024 * 1024; //500MB
 
                     if (fileSize > maxSizeInBytes) {
                       ScaffoldMessenger.of(context).showSnackBar(
