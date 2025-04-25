@@ -55,3 +55,5 @@ web/build/
 # Symbolication/Obfuscation
 app.*.symbols
 app.*.map.json
+
+.env

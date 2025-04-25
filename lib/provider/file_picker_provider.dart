@@ -12,6 +12,7 @@ import 'package:open_file/open_file.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:my_app/provider/AESHelper.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class FileNotifier extends StateNotifier<PlatformFile?> {
   FileNotifier() : super(null) {
@@ -118,6 +119,7 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
 
   Future<void> uploadFile(PlatformFile pickedFile, String description,
       String filePassword, bool locked, int daysLeft, String userId) async {
+    String default_password = dotenv.get('DEFAULT_PBKDF2_PASSWORD');
     if (pickedFile == null) {
       return;
     }
@@ -127,7 +129,7 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
       final fileBytes = await originalFile.readAsBytes();
 
       final encryptionPassword =
-          filePassword.isNotEmpty ? filePassword : 'default_secure_password';
+          filePassword.isNotEmpty ? filePassword : default_password;
 
       print("Encrypting with password: $encryptionPassword"); // Debug log
 
@@ -240,8 +242,8 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
 
       // 3. Initialize encryption logic
       bool needsReEncryption = false;
-      String newEncryptionPassword = 'default_secure_password';
-      String currentEncryptionPassword = 'default_secure_password';
+      String newEncryptionPassword = dotenv.get('DEFAULT_PBKDF2_PASSWORD');
+      String currentEncryptionPassword = dotenv.get('DEFAULT_PBKDF2_PASSWORD');
       String updatedHashedPassword = currentFile.filePassword;
 
       // 4. Handle password status change
@@ -264,8 +266,8 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
           updateData['filePassword'] = '';
           currentEncryptionPassword =
               oldPassword; // Use old password to decrypt
-          newEncryptionPassword =
-              'default_secure_password'; // Use default for new encryption
+          newEncryptionPassword = dotenv
+              .get('DEFAULT_PBKDF2_PASSWORD'); // Use default for new encryption
           needsReEncryption = true;
         }
         // Case 2: Adding password protection (was unlocked, now locking)
@@ -278,7 +280,7 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
           updatedHashedPassword = hashPassword(password);
           updateData['filePassword'] = updatedHashedPassword;
           currentEncryptionPassword =
-              'default_secure_password'; // Default for decryption
+              dotenv.get('DEFAULT_PBKDF2_PASSWORD'); // Default for decryption
           newEncryptionPassword = password; // New password for encryption
           needsReEncryption = true;
         }
@@ -417,7 +419,8 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
           return;
         }
       } else {
-        password = 'default_secure_password'; // Must match the upload password
+        password = dotenv
+            .get('DEFAULT_PBKDF2_PASSWORD'); // Must match the upload password
       }
 
       // Download the encrypted file

@@ -8,10 +8,12 @@ import 'package:my_app/screens/login.dart';
 import 'package:my_app/screens/register.dart';
 import 'package:my_app/screens/file_list.dart';
 import 'package:my_app/screens/upload.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await dotenv.load();
   runApp(const ProviderScope(child: MyApp()));
 }
 
