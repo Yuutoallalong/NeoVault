@@ -27,7 +27,6 @@ class UserNotifier extends StateNotifier<MyUser?> {
       final userId = userDocs[0].id;
       MyUser currentUser = MyUser.fromJson({...userData, 'id': userId});
       state = currentUser;
-
     }
   }
 
@@ -155,6 +154,15 @@ class UserNotifier extends StateNotifier<MyUser?> {
       await setUser(email);
     } catch (e) {
       throw Exception('Error saving user to Firestore: $e');
+    }
+  }
+
+  Future<void> resetPassword(String email) async {
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      print("Password reset email sent");
+    } on FirebaseAuthException catch (e) {
+      print("Error: ${e.message}");
     }
   }
 }
