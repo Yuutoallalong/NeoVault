@@ -48,9 +48,16 @@ class ForgotPwState extends ConsumerState<ForgotPw> {
                     onPressed: () async {
                       final email = emailController.text.trim();
                       if (email.isNotEmpty) {
-                        await ref
+                        final success = await ref
                             .read(userProvider.notifier)
                             .resetPassword(email);
+                        if (!success) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text(
+                                    "Password reset email doesn't send, please try again")),
+                          );
+                        }
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text("Password reset email sent")),
                         );

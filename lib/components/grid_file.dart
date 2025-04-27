@@ -1,11 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:my_app/models/fileInfo.dart';
+import 'package:my_app/models/user.dart';
 import 'package:my_app/provider/file_picker_provider.dart';
 import 'package:my_app/provider/user_provider.dart';
 
 class GridFile extends ConsumerWidget {
-  const GridFile({super.key});
+  final String userId;
+  const GridFile({super.key, required this.userId});
+
+  void showFileMismatchDialog(
+      BuildContext context, WidgetRef ref, FileInfo file) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("File Hash Mismatch"),
+          content: Text(
+            "This could indicate that the file has been modified, which could make it unsafe to open. Do you want to proceed?",
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () async {
+                await ref
+                    .read(fileProvider.notifier)
+                    .previewFile(context, file, stillProceed: true);
+                Navigator.of(context).pop();
+              },
+              child: Text("Open File"),
+            ),
+            TextButton(
+              onPressed: () async {
+                await ref
+                    .read(fileProvider.notifier)
+                    .deleteFile(file.id, userId);
+                Navigator.of(context).pop();
+              },
+              child: Text("Delete File", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -50,18 +88,23 @@ class GridFile extends ConsumerWidget {
                   ],
                 ),
                 child: InkWell(
-                  onTap: () {
-                    ref.read(fileProvider.notifier).previewFile(context, file);
+                  onTap: () async {
+                    final result = await ref
+                        .read(fileProvider.notifier)
+                        .previewFile(context, file);
+                    if (result == ViewFileResponse.unmatch) {
+                      showFileMismatchDialog(context, ref, file);
+                    }
                   },
                   child: Column(
                     children: [
                       Padding(
                         padding: EdgeInsets.only(top: 5, left: 125),
                         child: InkWell(
-                          onTap: () {
+                          onTap: () async {
                             // Get the FileNotifier instance
                             final fileNotifier =
-                                ref.read(fileProvider.notifier);
+                                await ref.read(fileProvider.notifier);
                             // Call the navigateToFileDetail method
                             fileNotifier.navigateToFileDetail(context, file);
                           },

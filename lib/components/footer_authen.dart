@@ -51,7 +51,9 @@ Widget footerAuthen({
 
                 Navigator.pushReplacementNamed(context, '/filelist');
               } catch (e) {
-                print("Facebook login failed: $e");
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Fail to sign in with facebook, please try again')),
+                );
               }
             },
           ),
@@ -63,7 +65,9 @@ Widget footerAuthen({
                 await ref.read(userProvider.notifier).signInWithGoogle();
                 Navigator.pushReplacementNamed(context, '/filelist');
               } catch (e) {
-                print(e);
+                 ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Fail to sign in with google, please try again')),
+                );
               }
             },
           ),

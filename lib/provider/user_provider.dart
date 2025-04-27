@@ -157,12 +157,12 @@ class UserNotifier extends StateNotifier<MyUser?> {
     }
   }
 
-  Future<void> resetPassword(String email) async {
+  Future<bool> resetPassword(String email) async {
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      print("Password reset email sent");
+      return true;
     } on FirebaseAuthException catch (e) {
-      print("Error: ${e.message}");
+      return false;
     }
   }
 }

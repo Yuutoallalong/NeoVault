@@ -14,6 +14,8 @@ import 'dart:convert';
 import 'package:my_app/provider/AESHelper.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+enum ViewFileResponse { success, unmatch, failed }
+
 class FileNotifier extends StateNotifier<PlatformFile?> {
   FileNotifier() : super(null) {
     // Initialize periodic cleanup when the notifier is created
@@ -38,23 +40,15 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
     try {
       // Get current time
       final now = DateTime.now();
-      print('Running cleanup at: $now');
-
       // Create a query for files that have expired
       final querySnapshot = await FirebaseFirestore.instance
           .collection('files')
           .where('expiredIn', isLessThan: now)
           .get();
-
-      print('Found ${querySnapshot.docs.length} expired files');
-
       // Process each expired file
       for (var doc in querySnapshot.docs) {
         try {
           final fileInfo = FileInfo.fromFirestore(doc);
-          print(
-              'Attempting to delete expired file: ${fileInfo.name}, ID: ${fileInfo.id}, expired on: ${fileInfo.expiredIn}');
-
           bool success = await deleteFile(fileInfo.id, fileInfo.userId);
 
           // Increment the expiredFileCount if the file was successfully deleted
@@ -66,20 +60,10 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
                 .update({
               'expiredFileCount': FieldValue.increment(1),
             });
-            print('Incremented expired file count for user ${fileInfo.userId}');
           }
-
-          print(
-              'Delete result for ${fileInfo.id}: ${success ? "Success" : "Failed"}');
-        } catch (e) {
-          print('Error processing document ${doc.id}: $e');
-        }
+        } catch (e) {}
       }
-
-      print('Expired files cleanup completed');
-    } catch (e) {
-      print('Error cleaning up expired files: $e');
-    }
+    } catch (e) {}
   }
 
   // Don't forget to add this to clean up the timer when the notifier is disposed
@@ -131,8 +115,9 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
       final encryptionPassword =
           filePassword.isNotEmpty ? filePassword : default_password;
 
-      print("Encrypting with password: $encryptionPassword"); // Debug log
+      final hashedBytes = sha256.convert(fileBytes).bytes;
 
+      final hashedFileStr = base64.encode(hashedBytes);
       // Encrypt the file
       final encryptedBytes =
           AESHelper.encryptFile(fileBytes, encryptionPassword);
@@ -161,7 +146,8 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
           filePassword: hashPassword(filePassword),
           description: description,
           size: pickedFile.size.toDouble(),
-          userId: userId);
+          userId: userId,
+          hash: hashedFileStr);
 
       await saveFileToFirestore(fileInfo);
 
@@ -173,9 +159,7 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
 
       await encryptedFile.delete();
       state = null;
-    } catch (e) {
-      print('Error uploading file: $e');
-    }
+    } catch (e) {}
   }
 
   Future<void> saveFileToFirestore(FileInfo fileInfo) async {
@@ -375,7 +359,6 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
           final ref = FirebaseStorage.instance.refFromURL(file.url);
           await ref.delete();
         } catch (e) {
-          print('Error deleting from storage: $e');
           // Continue with Firestore deletion even if Storage deletion fails
         }
       }
@@ -390,12 +373,12 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
 
       return true;
     } catch (e) {
-      print('Error deleting file: $e');
       return false;
     }
   }
 
-  Future<void> previewFile(BuildContext context, FileInfo fileInfo) async {
+  Future<ViewFileResponse> previewFile(BuildContext context, FileInfo fileInfo,
+      {bool stillProceed = false}) async {
     try {
       String? password;
 
@@ -407,7 +390,7 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Password required to preview this file')),
           );
-          return;
+          return ViewFileResponse.failed;
         }
 
         // Verify password - compare HASHED passwords
@@ -416,7 +399,7 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Incorrect password')),
           );
-          return;
+          return ViewFileResponse.failed;
         }
       } else {
         password = dotenv
@@ -452,11 +435,17 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
       Uint8List decryptedBytes;
       try {
         decryptedBytes = AESHelper.decryptFile(encryptedBytes, password);
+        // TODO
+        final hashedBytes = sha256.convert(decryptedBytes).bytes;
+        final hashedFileStr = base64.encode(hashedBytes);
+        if (hashedFileStr != fileInfo.hash && !stillProceed) {
+          return ViewFileResponse.unmatch;
+        }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Decryption failed: ${e.toString()}')),
         );
-        return;
+        return ViewFileResponse.failed;
       }
 
       // Save the decrypted file to a temporary location
@@ -482,6 +471,7 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
         SnackBar(content: Text('Cannot preview file: ${e.toString()}')),
       );
     }
+    return ViewFileResponse.success;
   }
 
 // Add this method to show a password dialog
@@ -576,7 +566,6 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
   //         .doc(userId)
   //         .update({'expiredFileCount': expiredCount});
   //   } catch (e) {
-  //     print('Error updating expired file count: $e');
   //   }
   // }
 

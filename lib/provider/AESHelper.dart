@@ -54,7 +54,6 @@ class AESHelper {
 
       return result;
     } catch (e) {
-      print('Encryption error: $e');
       rethrow;
     }
   }
@@ -84,7 +83,6 @@ class AESHelper {
       // Decrypt the data
       return cipher.process(encryptedData);
     } catch (e) {
-      print('Decryption error: $e');
       rethrow;
     }
   }

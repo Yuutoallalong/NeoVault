@@ -82,7 +82,9 @@ class FileList extends ConsumerWidget {
                 ),
               ),
             ),
-            GridFile(),
+            GridFile(
+              userId: user.id,
+            ),
           ],
         ),
       ),
