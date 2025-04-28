@@ -10,9 +10,7 @@ Future sessionDialog({required BuildContext context}) {
         TextButton(
           onPressed: () {
             Navigator.of(context).pop();
-            // ไปที่หน้า login หลังจากปิด Dialog
-            Navigator.pushNamedAndRemoveUntil(
-                context, '/login', (route) => false);
+            Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
           },
           child: const Text('OK'),
         ),
