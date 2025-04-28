@@ -47,12 +47,16 @@ Widget footerAuthen({
             asset: "assets/icons/facebook.png",
             onTap: () async {
               try {
-                await ref.read(userProvider.notifier).signInWithFacebook();
+                await ref
+                    .read(userProvider.notifier)
+                    .signInWithFacebook(context: context);
 
                 Navigator.pushReplacementNamed(context, '/filelist');
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Fail to sign in with facebook, please try again')),
+                  SnackBar(
+                      content: Text(
+                          'Fail to sign in with facebook, please try again')),
                 );
               }
             },
@@ -62,11 +66,15 @@ Widget footerAuthen({
             asset: "assets/icons/google.png",
             onTap: () async {
               try {
-                await ref.read(userProvider.notifier).signInWithGoogle();
+                await ref
+                    .read(userProvider.notifier)
+                    .signInWithGoogle(context: context);
                 Navigator.pushReplacementNamed(context, '/filelist');
               } catch (e) {
-                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Fail to sign in with google, please try again')),
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text(
+                          'Fail to sign in with google, please try again')),
                 );
               }
             },

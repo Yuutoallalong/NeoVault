@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,7 +17,24 @@ class UserNotifier extends StateNotifier<MyUser?> {
   UserNotifier() : super(null);
 
   final firestore = FirebaseFirestore.instance;
-  Future<void> setUser(String email) async {
+  Timer? _logoutTimer;
+  static const Duration sessionTimeout = Duration(minutes: 30);
+
+  // ====== Timer Handling ======
+  void _startAutoLogoutTimer({required BuildContext context}) {
+    _cancelAutoLogoutTimer();
+    _logoutTimer = Timer(sessionTimeout, () async {
+      await logout();
+    });
+  }
+
+  void _cancelAutoLogoutTimer() {
+    _logoutTimer?.cancel();
+    _logoutTimer = null;
+  }
+
+  // ====== Main Functions ======
+  Future<void> setUser({required String email}) async {
     final userSnapshot = await firestore
         .collection('users')
         .where('email', isEqualTo: email)
@@ -33,13 +51,15 @@ class UserNotifier extends StateNotifier<MyUser?> {
   Future<String> login({
     required String email,
     required String password,
+    required BuildContext context,
   }) async {
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      await setUser(email);
+      await setUser(email: email);
+      _startAutoLogoutTimer(context: context); // เริ่มนับเวลา auto logout
     } on FirebaseAuthException catch (e) {
       return e.code;
     }
@@ -51,6 +71,7 @@ class UserNotifier extends StateNotifier<MyUser?> {
     required String username,
     required String email,
     required String password,
+    required BuildContext context,
   }) async {
     try {
       final userCredential =
@@ -68,21 +89,20 @@ class UserNotifier extends StateNotifier<MyUser?> {
         'fileCount': 0,
         'expiredFileCount': 0,
       });
+
+      await setUser(email: email);
+      _startAutoLogoutTimer(context: context); // เริ่มนับเวลา auto logout
     } on FirebaseAuthException catch (e) {
       return e.code;
     }
     return 'success';
   }
 
-  Future<void> signInWithGoogle() async {
-    // Trigger the authentication flow
+  Future<void> signInWithGoogle({required BuildContext context}) async {
     final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-
-    // Obtain the auth details from the request
     final GoogleSignInAuthentication? googleAuth =
         await googleUser?.authentication;
 
-    // Create a new credential
     final credential = GoogleAuthProvider.credential(
       accessToken: googleAuth?.accessToken,
       idToken: googleAuth?.idToken,
@@ -90,37 +110,33 @@ class UserNotifier extends StateNotifier<MyUser?> {
     var userCredential =
         await FirebaseAuth.instance.signInWithCredential(credential);
 
-    await saveUserToFirestore(userCredential);
+    await saveUserToFirestore(userCredential: userCredential);
+    _startAutoLogoutTimer(context: context);
   }
 
-  Future<void> signInWithFacebook() async {
-    // Trigger the sign-in flow
+  Future<void> signInWithFacebook({required BuildContext context}) async {
     final LoginResult loginResult = await FacebookAuth.instance.login();
-
-    // Create a credential from the access token
     final OAuthCredential facebookAuthCredential =
         FacebookAuthProvider.credential(loginResult.accessToken!.tokenString);
 
-    // Once signed in, return the UserCredential
     var userCredential = await FirebaseAuth.instance
         .signInWithCredential(facebookAuthCredential);
-    await saveUserToFirestore(userCredential);
+
+    await saveUserToFirestore(userCredential: userCredential);
+    _startAutoLogoutTimer(context: context);
   }
 
-  Future<void> logout(BuildContext context) async {
+  Future<void> logout() async {
+    _cancelAutoLogoutTimer();
     await FirebaseAuth.instance.signOut();
     await GoogleSignIn().signOut();
     await FacebookAuth.instance.logOut();
+    await clearAuthData();
     state = null;
-    if (context.mounted) {
-      if (context.mounted) {
-        Navigator.pushNamedAndRemoveUntil(
-            context, '/login', ModalRoute.withName('/'));
-      }
-    }
   }
 
-  Future<void> saveUserToFirestore(UserCredential userCredential) async {
+  Future<void> saveUserToFirestore(
+      {required UserCredential userCredential}) async {
     try {
       final user = userCredential.user;
       if (user == null) {
@@ -138,7 +154,7 @@ class UserNotifier extends StateNotifier<MyUser?> {
           .get();
 
       if (userSnapshot.docs.isNotEmpty) {
-        await setUser(email);
+        await setUser(email: email);
         return;
       }
 
@@ -151,17 +167,17 @@ class UserNotifier extends StateNotifier<MyUser?> {
         'expiredFileCount': 0,
       });
 
-      await setUser(email);
+      await setUser(email: email);
     } catch (e) {
       throw Exception('Error saving user to Firestore: $e');
     }
   }
 
-  Future<bool> resetPassword(String email) async {
+  Future<bool> resetPassword({required String email}) async {
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
       return true;
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException {
       return false;
     }
   }

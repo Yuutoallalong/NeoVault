@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:my_app/models/fileInfo.dart';
-import 'package:my_app/models/user.dart';
 import 'package:my_app/provider/file_picker_provider.dart';
 import 'package:my_app/provider/user_provider.dart';
 

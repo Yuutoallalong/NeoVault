@@ -94,10 +94,10 @@ class RegisterState extends ConsumerState<Register> {
                                   String err = await ref
                                       .read(userProvider.notifier)
                                       .register(
-                                        username: usernameController.text,
-                                        email: emailController.text,
-                                        password: passwordController.text,
-                                      );
+                                          username: usernameController.text,
+                                          email: emailController.text,
+                                          password: passwordController.text,
+                                          context: context);
                                   if (err == 'success') {
                                     if (context.mounted) {
                                       Navigator.pushNamed(context, '/login');

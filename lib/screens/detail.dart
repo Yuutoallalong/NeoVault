@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/components/back_leading_button.dart';
 import 'package:my_app/components/file_settings.dart';
+import 'package:my_app/components/session_dialog.dart';
+import 'package:my_app/models/user.dart';
 import 'package:my_app/provider/file_picker_provider.dart';
 import 'package:my_app/models/fileInfo.dart';
 import 'package:my_app/provider/user_provider.dart';
@@ -75,11 +77,17 @@ class _DetailState extends ConsumerState<Detail> {
   Widget build(BuildContext context) {
     // Watch the file data
     final fileAsync = ref.watch(currentFileProvider(widget.fileId));
-    final user = ref.watch(userProvider);
+   final user = ref.watch(userProvider);
+
+    ref.listen<MyUser?>(userProvider, (previous, next) {
+      if (previous != null && next == null) {
+        if (context.mounted) {
+          sessionDialog(context: context);
+        }
+      }
+    });
     if (user == null) {
-      return Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return Center(child: CircularProgressIndicator());
     }
     return Scaffold(
       appBar: AppBar(
@@ -369,7 +377,7 @@ class _DetailState extends ConsumerState<Detail> {
         ref.invalidate(fileProvider);
 
         // เพิ่มบรรทัดนี้เพื่อรีเฟรชข้อมูลผู้ใช้หลังจากลบไฟล์สำเร็จ
-        await ref.read(userProvider.notifier).setUser(userEmail);
+        await ref.read(userProvider.notifier).setUser(email: userEmail);
 
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('File deleted')));

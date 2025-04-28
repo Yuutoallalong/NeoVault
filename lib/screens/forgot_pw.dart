@@ -5,7 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:my_app/components/back_leading_button.dart';
 import 'package:my_app/components/input.dart';
 import 'package:my_app/provider/user_provider.dart';
-import 'package:my_app/screens/login.dart';
 
 class ForgotPw extends ConsumerStatefulWidget {
   const ForgotPw({super.key});
@@ -50,7 +49,7 @@ class ForgotPwState extends ConsumerState<ForgotPw> {
                       if (email.isNotEmpty) {
                         final success = await ref
                             .read(userProvider.notifier)
-                            .resetPassword(email);
+                            .resetPassword(email: email);
                         if (!success) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(

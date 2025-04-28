@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/components/back_leading_button.dart';
 import 'package:my_app/components/file_settings.dart';
+import 'package:my_app/components/session_dialog.dart';
+import 'package:my_app/models/user.dart';
 import 'package:my_app/provider/file_picker_provider.dart';
 import 'package:my_app/provider/user_provider.dart';
 
@@ -23,12 +25,24 @@ class _UploadState extends ConsumerState<Upload> {
   int dayLeft = 7;
   @override
   Widget build(BuildContext context) {
-    final user = ref.read(userProvider);
+    final user = ref.watch(userProvider);
+
+    ref.listen<MyUser?>(userProvider, (previous, next) {
+      if (previous != null && next == null) {
+        if (context.mounted) {
+          sessionDialog(context: context);
+        }
+      }
+    });
+    if (user == null) {
+      return Center(child: CircularProgressIndicator());
+    }
+    
     return Scaffold(
       appBar: AppBar(
         leading: backLeadingButton(context: context),
         title: Text(
-          user!.username,
+          user.username,
           style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -195,7 +209,7 @@ class _UploadState extends ConsumerState<Upload> {
                       return;
                     }
 
-                    final userEmail = user!.email;
+                    final userEmail = user.email;
 
                     await ref.read(fileProvider.notifier).uploadFile(
                           pickedFile,
@@ -210,7 +224,9 @@ class _UploadState extends ConsumerState<Upload> {
                       SnackBar(content: Text('Uploaded')),
                     );
 
-                    await ref.read(userProvider.notifier).setUser(userEmail);
+                    await ref
+                        .read(userProvider.notifier)
+                        .setUser(email: userEmail);
                     Navigator.pop(context, true);
                   },
                   child: Text('Upload'),

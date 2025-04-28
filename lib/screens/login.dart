@@ -97,7 +97,8 @@ class LoginState extends ConsumerState<Login> {
                                             .login(
                                                 email: emailController.text,
                                                 password:
-                                                    passwordController.text);
+                                                    passwordController.text,
+                                                context: context);
 
                                         if (err == 'success') {
                                           if (context.mounted) {
