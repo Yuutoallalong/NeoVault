@@ -105,7 +105,7 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
 
   Future<void> uploadFile(PlatformFile pickedFile, String description,
       String filePassword, bool locked, int daysLeft, String userId) async {
-    String default_password = dotenv.get('DEFAULT_PBKDF2_PASSWORD');
+    String default_password = dotenv.env['DEFAULT_PBKDF2_PASSWORD'] ?? '';
     if (pickedFile == null) {
       return;
     }
@@ -228,8 +228,10 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
 
       // 3. Initialize encryption logic
       bool needsReEncryption = false;
-      String newEncryptionPassword = dotenv.get('DEFAULT_PBKDF2_PASSWORD');
-      String currentEncryptionPassword = dotenv.get('DEFAULT_PBKDF2_PASSWORD');
+      String newEncryptionPassword =
+          dotenv.env['DEFAULT_PBKDF2_PASSWORD'] ?? '';
+      String currentEncryptionPassword =
+          dotenv.env['DEFAULT_PBKDF2_PASSWORD'] ?? '';
       String updatedHashedPassword = currentFile.filePassword;
 
       // 4. Handle password status change
@@ -252,8 +254,8 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
           updateData['filePassword'] = '';
           currentEncryptionPassword =
               oldPassword; // Use old password to decrypt
-          newEncryptionPassword = dotenv
-              .get('DEFAULT_PBKDF2_PASSWORD'); // Use default for new encryption
+          newEncryptionPassword = dotenv.env['DEFAULT_PBKDF2_PASSWORD'] ??
+              ''; // Use default for new encryption
           needsReEncryption = true;
         }
         // Case 2: Adding password protection (was unlocked, now locking)
@@ -265,8 +267,8 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
 
           updatedHashedPassword = hashPassword(password);
           updateData['filePassword'] = updatedHashedPassword;
-          currentEncryptionPassword =
-              dotenv.get('DEFAULT_PBKDF2_PASSWORD'); // Default for decryption
+          currentEncryptionPassword = dotenv.env['DEFAULT_PBKDF2_PASSWORD'] ??
+              ''; // Default for decryption
           newEncryptionPassword = password; // New password for encryption
           needsReEncryption = true;
         }
@@ -434,8 +436,8 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
           return;
         }
       } else {
-        password = dotenv
-            .get('DEFAULT_PBKDF2_PASSWORD'); // Must match the upload password
+        password = dotenv.env['DEFAULT_PBKDF2_PASSWORD'] ??
+            ''; // Must match the upload password
       }
 
       // Download the encrypted file
@@ -584,31 +586,6 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
       );
     }
   }
-
-  // Future<void> updateExpiredFileCount(String userId) async {
-  //   try {
-  //     // Get current time
-  //     final now = DateTime.now();
-
-  //     // Count expired files for this user
-  //     final querySnapshot = await FirebaseFirestore.instance
-  //         .collection('files')
-  //         .where('userId', isEqualTo: userId)
-  //         .where('expiredIn', isLessThan: now)
-  //         .get();
-
-  //     final expiredCount = querySnapshot.docs.length;
-
-  //     // Update user document with expired file count
-  //     await FirebaseFirestore.instance
-  //         .collection('users')
-  //         .doc(userId)
-  //         .update({'expiredFileCount': expiredCount});
-  //   } catch (e) {
-  //   }
-  // }
-
-  // Add this method to the FileNotifier class
 }
 
 final fileProvider =
