@@ -62,7 +62,7 @@ class FileList extends ConsumerWidget {
                           await ref.read(userProvider.notifier).logout();
                           await clearAuthData();
                           if (context.mounted) {
-                            Navigator.pushReplacementNamed(context, '/login');
+                            Navigator.pushReplacementNamed(context, '/');
                           }
                         },
                         child: SvgPicture.asset(
