@@ -53,6 +53,12 @@ dependencies:
   pointycastle: ^3.7.3
   path_provider: ^2.1.2
   flutter_dotenv: ^5.2.1
+  flutter_launcher_icons: ^0.14.3
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo/Neovault_logo_final.png"
 
 dev_dependencies:
   flutter_test:
@@ -81,6 +87,7 @@ flutter:
     - assets/icons/
     - assets/svg/
     - .env
+    - assets/logo/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
