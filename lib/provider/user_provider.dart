@@ -18,7 +18,7 @@ class UserNotifier extends StateNotifier<MyUser?> {
 
   final firestore = FirebaseFirestore.instance;
   Timer? _logoutTimer;
-  static const Duration sessionTimeout = Duration(seconds: 5);
+  static const Duration sessionTimeout = Duration(seconds: 432000);
 
   // ====== Timer Handling ======
   void _startAutoLogoutTimer({required BuildContext context}) {

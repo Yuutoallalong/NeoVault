@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:my_app/models/fileInfo.dart';
 import 'package:my_app/provider/file_picker_provider.dart';
 import 'package:my_app/provider/user_provider.dart';
+import 'package:my_app/screens/detail.dart';
 
 class GridFile extends ConsumerWidget {
   final String userId;
@@ -56,6 +57,9 @@ class GridFile extends ConsumerWidget {
                     await ref
                         .read(fileProvider.notifier)
                         .previewFile(context, file);
+                    await ref
+                        .read(userProvider.notifier)
+                        .setUser(email: user.email);
                   },
                   child: Column(
                     children: [
