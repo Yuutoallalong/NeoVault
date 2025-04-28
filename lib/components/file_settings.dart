@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 
-Widget fileSettings(
-    {required BuildContext context,
-    required TextEditingController messageController,
-    required TextEditingController passwordController,
-    required bool switchStatus,
-    required Function(bool) switchOnChanged,
-    required Function(int) daysLeftOnChanged,
-    required GlobalKey formKey,
-    required String hintText,
-    required int dayLeft}) {
+Widget fileSettings({
+  required BuildContext context,
+  required TextEditingController messageController,
+  required TextEditingController passwordController,
+  required bool switchStatus,
+  required Function(bool) switchOnChanged,
+  required Function(int) daysLeftOnChanged,
+  required GlobalKey formKey,
+  required String hintText,
+  required int dayLeft,
+}) {
   return Column(
     children: [
       TextField(
@@ -130,6 +131,7 @@ Widget fileSettings(
               key: formKey,
               child: TextFormField(
                 controller: passwordController,
+                obscureText: true,
                 decoration: InputDecoration(
                     hintText: 'Enter your password',
                     hintStyle: TextStyle(color: Colors.white),

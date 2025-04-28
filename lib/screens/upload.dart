@@ -53,8 +53,8 @@ class _UploadState extends ConsumerState<Upload> {
           children: [
             Column(
               children: [
-                const SizedBox(
-                  height: 180,
+                SizedBox(
+                  height: MediaQuery.of(context).size.width / 8,
                 ),
                 Container(
                   width: double.infinity,
@@ -272,6 +272,7 @@ class _UploadState extends ConsumerState<Upload> {
                   },
                   child: Text('Upload'),
                 ),
+                SizedBox(height: 32),
               ],
             ),
           ],

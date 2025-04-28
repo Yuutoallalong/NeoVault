@@ -38,12 +38,13 @@ class LoginState extends ConsumerState<Login> {
                         Text(
                           "NeoVault",
                           style: GoogleFonts.rammettoOne(
-                              fontSize: 58,
+                              fontSize:
+                                  MediaQuery.of(context).size.width * 0.14,
                               fontWeight: FontWeight.bold,
                               color: Theme.of(context).primaryColor),
                         ),
-                        const SizedBox(
-                          height: 130,
+                        SizedBox(
+                          height: MediaQuery.of(context).size.width / 3,
                         ),
                         Form(
                             key: formKey,
@@ -89,33 +90,33 @@ class LoginState extends ConsumerState<Login> {
                                   height: 24,
                                 ),
                                 ElevatedButton(
-                                    onPressed: () async {
-                                      if (formKey.currentState?.validate() ==
-                                          true) {
-                                        String err = await ref
-                                            .read(userProvider.notifier)
-                                            .login(
-                                                email: emailController.text,
-                                                password:
-                                                    passwordController.text,
-                                                context: context);
+                                  onPressed: () async {
+                                    if (formKey.currentState?.validate() ==
+                                        true) {
+                                      String err = await ref
+                                          .read(userProvider.notifier)
+                                          .login(
+                                              email: emailController.text,
+                                              password: passwordController.text,
+                                              context: context);
 
-                                        if (err == 'success') {
-                                          if (context.mounted) {
-                                            Navigator.pushReplacementNamed(
-                                                context, '/filelist');
-                                          }
-                                        } else {
-                                          setState(() {
-                                            loginFailCount++;
-                                          });
-                                          if (context.mounted) {
-                                            showSnackBar(context, err);
-                                          }
+                                      if (err == 'success') {
+                                        if (context.mounted) {
+                                          Navigator.pushReplacementNamed(
+                                              context, '/filelist');
+                                        }
+                                      } else {
+                                        setState(() {
+                                          loginFailCount++;
+                                        });
+                                        if (context.mounted) {
+                                          showSnackBar(context, err);
                                         }
                                       }
-                                    },
-                                    child: Text("Login"))
+                                    }
+                                  },
+                                  child: Text("Login"),
+                                ),
                               ],
                             )),
                         const SizedBox(
@@ -128,6 +129,9 @@ class LoginState extends ConsumerState<Login> {
                           footerLinkText: "Register Now",
                           to: "/register",
                           ref: ref,
+                        ),
+                        SizedBox(
+                          height: 32,
                         )
                       ],
                     )

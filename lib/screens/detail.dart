@@ -77,7 +77,7 @@ class _DetailState extends ConsumerState<Detail> {
   Widget build(BuildContext context) {
     // Watch the file data
     final fileAsync = ref.watch(currentFileProvider(widget.fileId));
-   final user = ref.watch(userProvider);
+    final user = ref.watch(userProvider);
 
     ref.listen<MyUser?>(userProvider, (previous, next) {
       if (previous != null && next == null) {
@@ -112,7 +112,9 @@ class _DetailState extends ConsumerState<Detail> {
                 padding: const EdgeInsets.symmetric(horizontal: 32),
                 child: ListView(
                   children: [
-                    const SizedBox(height: 180),
+                    SizedBox(
+                      height: MediaQuery.of(context).size.width / 8,
+                    ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -168,7 +170,9 @@ class _DetailState extends ConsumerState<Detail> {
                       hintText: "Add a message (optional)",
                       dayLeft: dayLeft,
                     ),
-                    const SizedBox(height: 50),
+                    SizedBox(
+                      height: MediaQuery.of(context).size.width / 24,
+                    ),
                     // Delete button
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -184,6 +188,7 @@ class _DetailState extends ConsumerState<Detail> {
                       onPressed: isLoading ? null : _handleSave,
                       child: Text('Save'),
                     ),
+                    SizedBox(height: 32),
                   ],
                 ),
               ),
