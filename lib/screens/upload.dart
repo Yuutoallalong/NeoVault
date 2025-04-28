@@ -172,7 +172,8 @@ class _UploadState extends ConsumerState<Upload> {
                     },
                     formKey: formKey,
                     hintText: "Add a message (optional)",
-                    dayLeft: dayLeft),
+                    dayLeft: dayLeft,
+                    passwordHintText: "Enter your password"),
                 ElevatedButton(
                   onPressed: () async {
                     final pickedFile = ref.watch(fileProvider);

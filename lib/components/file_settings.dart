@@ -10,6 +10,7 @@ Widget fileSettings({
   required GlobalKey formKey,
   required String hintText,
   required int dayLeft,
+  required String passwordHintText,
 }) {
   return Column(
     children: [
@@ -133,7 +134,7 @@ Widget fileSettings({
                 controller: passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
-                    hintText: 'Enter your password',
+                    hintText: passwordHintText,
                     hintStyle: TextStyle(color: Colors.white),
                     filled: true,
                     fillColor: Color(0xff5992b7),

@@ -48,30 +48,30 @@ class _DetailState extends ConsumerState<Detail> {
     });
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _updateControllersFromFileData();
-  }
+  // @override
+  // void didChangeDependencies() {
+  //   super.didChangeDependencies();
+  //   _updateControllersFromFileData();
+  // }
 
   // Update controllers when file data is available
-  void _updateControllersFromFileData() {
-    final fileAsync = ref.watch(currentFileProvider(widget.fileId));
+  // void _updateControllersFromFileData() {
+  //   final fileAsync = ref.watch(currentFileProvider(widget.fileId));
 
-    fileAsync.whenData((fileInfo) {
-      if (fileInfo != null && mounted) {
-        setState(() {
-          dayLeft = fileInfo.daysLeft;
-          switchStatus = fileInfo.locked;
+  //   fileAsync.whenData((fileInfo) {
+  //     if (fileInfo != null && mounted) {
+  //       setState(() {
+  //         dayLeft = fileInfo.daysLeft;
+  //         switchStatus = fileInfo.locked;
 
-          // Only set the controller text if it's empty or different
-          if (messageController.text != fileInfo.description) {
-            messageController.text = fileInfo.description;
-          }
-        });
-      }
-    });
-  }
+  //         // Only set the controller text if it's empty or different
+  //         if (messageController.text != fileInfo.description) {
+  //           messageController.text = fileInfo.description;
+  //         }
+  //       });
+  //     }
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -149,27 +149,27 @@ class _DetailState extends ConsumerState<Detail> {
                     ),
                     const SizedBox(height: 40),
                     fileSettings(
-                      context: context,
-                      messageController: messageController,
-                      passwordController: passwordController,
-                      switchStatus: switchStatus,
-                      switchOnChanged: (bool value) {
-                        setState(() {
-                          switchStatus = value;
-                          if (!value) {
-                            passwordController.clear();
-                          }
-                        });
-                      },
-                      daysLeftOnChanged: (int value) {
-                        setState(() {
-                          dayLeft = value;
-                        });
-                      },
-                      formKey: formKey,
-                      hintText: "Add a message (optional)",
-                      dayLeft: dayLeft,
-                    ),
+                        context: context,
+                        messageController: messageController,
+                        passwordController: passwordController,
+                        switchStatus: switchStatus,
+                        switchOnChanged: (bool value) {
+                          setState(() {
+                            switchStatus = value;
+                            if (!value) {
+                              passwordController.clear();
+                            }
+                          });
+                        },
+                        daysLeftOnChanged: (int value) {
+                          setState(() {
+                            dayLeft = value;
+                          });
+                        },
+                        formKey: formKey,
+                        hintText: "Add a message (optional)",
+                        dayLeft: dayLeft,
+                        passwordHintText: "Enter your new password"),
                     SizedBox(
                       height: MediaQuery.of(context).size.width / 24,
                     ),
@@ -325,6 +325,7 @@ class _DetailState extends ConsumerState<Detail> {
 
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Saved')));
+        Navigator.pushNamed(context, '/filelist');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Failed to save. Check password and try again.')));
