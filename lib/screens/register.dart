@@ -32,8 +32,8 @@ class RegisterState extends ConsumerState<Register> {
           children: [
             Column(
               children: [
-                const SizedBox(
-                  height: 40,
+                SizedBox(
+                  height: MediaQuery.of(context).size.width / 9,
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
@@ -134,7 +134,10 @@ class RegisterState extends ConsumerState<Register> {
                     footerText: "Already have an account? ",
                     footerLinkText: "Login Now",
                     to: "/login",
-                    ref: ref)
+                    ref: ref),
+                SizedBox(
+                  height: 32,
+                )
               ],
             )
           ],

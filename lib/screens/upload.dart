@@ -37,7 +37,7 @@ class _UploadState extends ConsumerState<Upload> {
     if (user == null) {
       return Center(child: CircularProgressIndicator());
     }
-    
+
     return Scaffold(
       appBar: AppBar(
         leading: backLeadingButton(context: context),
@@ -53,8 +53,8 @@ class _UploadState extends ConsumerState<Upload> {
           children: [
             Column(
               children: [
-                const SizedBox(
-                  height: 180,
+                SizedBox(
+                  height: MediaQuery.of(context).size.width / 8,
                 ),
                 Container(
                   width: double.infinity,
@@ -112,13 +112,24 @@ class _UploadState extends ConsumerState<Upload> {
                               children: [
                                 Padding(
                                   padding: const EdgeInsets.only(top: 20),
-                                  child: Text(
-                                    'Selected file : ${file.name}',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w400,
-                                        fontSize: 18),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16),
+                                    child: Center(
+                                      child: Text(
+                                        'Selected file: ${file.name}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w400,
+                                          fontSize: 18,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                    ),
                                   ),
                                 ),
+                                const SizedBox(height: 10),
                                 ElevatedButton(
                                   onPressed: () {
                                     ref.read(fileProvider.notifier).clearFile();
@@ -127,9 +138,9 @@ class _UploadState extends ConsumerState<Upload> {
                                     padding:
                                         const EdgeInsets.symmetric(vertical: 0),
                                     backgroundColor: Colors.red,
-                                    minimumSize: Size(140, 40),
+                                    minimumSize: const Size(140, 40),
                                   ),
-                                  child: Text(
+                                  child: const Text(
                                     "Cancel",
                                     style:
                                         TextStyle(fontWeight: FontWeight.w400),
@@ -211,26 +222,57 @@ class _UploadState extends ConsumerState<Upload> {
 
                     final userEmail = user.email;
 
-                    await ref.read(fileProvider.notifier).uploadFile(
-                          pickedFile,
-                          messageController.text,
-                          passwordController.text,
-                          switchStatus,
-                          dayLeft,
-                          user.id,
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (BuildContext context) {
+                        return Dialog(
+                          backgroundColor: Colors.white,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircularProgressIndicator(),
+                                SizedBox(width: 16),
+                                Text("Uploading..."),
+                              ],
+                            ),
+                          ),
                         );
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Uploaded')),
+                      },
                     );
 
-                    await ref
-                        .read(userProvider.notifier)
-                        .setUser(email: userEmail);
-                    Navigator.pop(context, true);
+                    try {
+                      await ref.read(fileProvider.notifier).uploadFile(
+                            pickedFile,
+                            messageController.text,
+                            passwordController.text,
+                            switchStatus,
+                            dayLeft,
+                            user.id,
+                          );
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Uploaded')),
+                      );
+
+                      await ref
+                          .read(userProvider.notifier)
+                          .setUser(email: userEmail);
+
+                      Navigator.pop(context, true);
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Upload failed: $e')),
+                      );
+                    } finally {
+                      Navigator.of(context, rootNavigator: true).pop();
+                    }
                   },
                   child: Text('Upload'),
                 ),
+                SizedBox(height: 32),
               ],
             ),
           ],

@@ -14,7 +14,7 @@ class GridFile extends ConsumerWidget {
     final userId = user!.id;
     final filesAsyncValue = ref.watch(filesStreamProvider(userId));
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.only(top: 0, bottom: 32, left: 20, right: 20),
       child: filesAsyncValue.when(
         data: (files) {
           if (files.isEmpty) {
@@ -31,18 +31,19 @@ class GridFile extends ConsumerWidget {
             itemCount: files.length,
             physics: const NeverScrollableScrollPhysics(),
             shrinkWrap: true,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              childAspectRatio: 1.2,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              childAspectRatio: 1.05,
               crossAxisCount: 2,
             ),
             itemBuilder: (context, index) {
               final file = files[index];
               return Container(
-                margin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                margin:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),
                   color: Colors.white,
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
                       color: Colors.black26,
                       blurRadius: 3,
@@ -62,46 +63,57 @@ class GridFile extends ConsumerWidget {
                   child: Column(
                     children: [
                       Padding(
-                        padding: EdgeInsets.only(top: 5, left: 125),
-                        child: InkWell(
-                          onTap: () async {
-                            // Get the FileNotifier instance
-                            final fileNotifier =
-                                await ref.read(fileProvider.notifier);
-                            // Call the navigateToFileDetail method
-                            fileNotifier.navigateToFileDetail(context, file);
-                          },
-                          child: SvgPicture.asset("assets/svg/edit.svg"),
+                        padding: const EdgeInsets.only(top: 5, right: 5),
+                        child: Align(
+                          alignment: Alignment.topRight,
+                          child: InkWell(
+                            onTap: () async {
+                              final fileNotifier =
+                                  ref.read(fileProvider.notifier);
+                              fileNotifier.navigateToFileDetail(context, file);
+                            },
+                            child: SvgPicture.asset("assets/svg/edit.svg"),
+                          ),
                         ),
                       ),
                       Padding(
-                        padding: EdgeInsets.only(top: 5),
+                        padding: const EdgeInsets.only(top: 5),
                         child: SvgPicture.asset(
                           "assets/svg/file.svg",
                           width: 40,
                           height: 40,
                         ),
                       ),
-                      Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        margin: const EdgeInsets.symmetric(horizontal: 10),
                         child: Text(
                           file.name,
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              overflow: TextOverflow.ellipsis),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          textAlign: TextAlign.center,
                         ),
                       ),
-                      Text(
-                        file.description.isEmpty
-                            ? "No description"
-                            : file.description,
-                        style: TextStyle(
-                            fontSize: 12,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Text(
+                          file.description.isEmpty
+                              ? "No description"
+                              : file.description,
+                          style: const TextStyle(
+                            fontSize: 14,
                             fontWeight: FontWeight.normal,
                             color: Colors.black38,
-                            overflow: TextOverflow.ellipsis),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ],
                   ),
