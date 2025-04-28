@@ -9,41 +9,6 @@ class GridFile extends ConsumerWidget {
   final String userId;
   const GridFile({super.key, required this.userId});
 
-  void showFileMismatchDialog(
-      BuildContext context, WidgetRef ref, FileInfo file) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("File Hash Mismatch"),
-          content: Text(
-            "This could indicate that the file has been modified, which could make it unsafe to open. Do you want to proceed?",
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () async {
-                await ref
-                    .read(fileProvider.notifier)
-                    .previewFile(context, file, stillProceed: true);
-                Navigator.of(context).pop();
-              },
-              child: Text("Open File"),
-            ),
-            TextButton(
-              onPressed: () async {
-                await ref
-                    .read(fileProvider.notifier)
-                    .deleteFile(file.id, userId);
-                Navigator.of(context).pop();
-              },
-              child: Text("Delete File", style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.read(userProvider);
@@ -88,12 +53,9 @@ class GridFile extends ConsumerWidget {
                 ),
                 child: InkWell(
                   onTap: () async {
-                    final result = await ref
+                    await ref
                         .read(fileProvider.notifier)
                         .previewFile(context, file);
-                    if (result == ViewFileResponse.unmatch) {
-                      showFileMismatchDialog(context, ref, file);
-                    }
                   },
                   child: Column(
                     children: [

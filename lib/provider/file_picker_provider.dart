@@ -16,6 +16,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 enum ViewFileResponse { success, unmatch, failed }
 
+enum UnmatchedHashResponse { open, delete, cancel }
+
 class FileNotifier extends StateNotifier<PlatformFile?> {
   FileNotifier() : super(null) {
     // Initialize periodic cleanup when the notifier is created
@@ -377,7 +379,37 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
     }
   }
 
-  Future<ViewFileResponse> previewFile(BuildContext context, FileInfo fileInfo,
+  Future<UnmatchedHashResponse> showFileMismatchDialog(
+      BuildContext context) async {
+    UnmatchedHashResponse? result = await showDialog<UnmatchedHashResponse>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("File Hash Mismatch"),
+          content: Text(
+            "This could indicate that the file has been modified, which could make it unsafe to open. Do you want to proceed?",
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(UnmatchedHashResponse.open);
+              },
+              child: Text("Open File"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(UnmatchedHashResponse.delete);
+              },
+              child: Text("Delete File", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? UnmatchedHashResponse.cancel;
+  }
+
+  Future<void> previewFile(BuildContext context, FileInfo fileInfo,
       {bool stillProceed = false}) async {
     try {
       String? password;
@@ -390,7 +422,7 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Password required to preview this file')),
           );
-          return ViewFileResponse.failed;
+          return;
         }
 
         // Verify password - compare HASHED passwords
@@ -399,7 +431,7 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Incorrect password')),
           );
-          return ViewFileResponse.failed;
+          return;
         }
       } else {
         password = dotenv
@@ -435,17 +467,25 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
       Uint8List decryptedBytes;
       try {
         decryptedBytes = AESHelper.decryptFile(encryptedBytes, password);
-        // TODO
         final hashedBytes = sha256.convert(decryptedBytes).bytes;
         final hashedFileStr = base64.encode(hashedBytes);
         if (hashedFileStr != fileInfo.hash && !stillProceed) {
-          return ViewFileResponse.unmatch;
+          UnmatchedHashResponse result = await showFileMismatchDialog(context);
+          switch (result) {
+            case UnmatchedHashResponse.open:
+              break;
+            case UnmatchedHashResponse.delete:
+              await deleteFile(fileInfo.id, fileInfo.userId);
+              return;
+            case UnmatchedHashResponse.cancel:
+              return;
+          }
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Decryption failed: ${e.toString()}')),
         );
-        return ViewFileResponse.failed;
+        return;
       }
 
       // Save the decrypted file to a temporary location
@@ -471,7 +511,6 @@ class FileNotifier extends StateNotifier<PlatformFile?> {
         SnackBar(content: Text('Cannot preview file: ${e.toString()}')),
       );
     }
-    return ViewFileResponse.success;
   }
 
 // Add this method to show a password dialog
